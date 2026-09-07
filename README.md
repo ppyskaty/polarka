@@ -1,6 +1,6 @@
 # Stáj Tiffany 🐴
 
-Hravý osobní organizér a plánovač pro 8letou holku, která má ráda koně.
+Hravý osobní organizér a plánovač pro dítě na 1. stupni, které má rádo koně.
 Běží jako **webová appka (PWA)** přidaná na plochu iPhonu — vypadá a chová se
 jako normální aplikace, funguje offline a **všechna data zůstávají v telefonu**.
 
@@ -20,6 +20,7 @@ jako normální aplikace, funguje offline a **všechna data zůstávají v telef
 | 🎁 **Cíl týdne** | Rodiče nastaví počet podkov a odměnu, na které se doma domluvíte. |
 | 🏅 **Odznaky** | 12 achievementů (první úkol, týden v řadě, 10 úkolů do školy…). |
 | ✏️ **Vlastní úkoly** | Sama si přidá úkol: název, obrázek, kategorii, hodnotu a jak často. |
+| 🗓️ **Rozvrh hodin** | Zadá se jednou. Domácí úkol pak přidá jedním klepnutím na předmět, s termínem na dnes nebo na zítra. |
 
 Denní bonus: když splní všechny dnešní úkoly, dostane **+15 podkov navíc**.
 

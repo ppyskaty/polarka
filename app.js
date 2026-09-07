@@ -73,6 +73,16 @@ const SCENES = [
 const COAT_PR = { hnedak:0, ryzka:70, plavak:90, belous:110, vranik:130, strakac:160, ruzovy:220, modry:220 };
 const MANE_PR = { tmava:0, svetla:50, ohniva:70, ruzova:80, fialova:90, duhova:300 };
 
+const SUBJECTS = [
+  { id:'cj',  nm:'Čeština',     emo:'📕' }, { id:'m',   nm:'Matematika', emo:'🔢' },
+  { id:'aj',  nm:'Angličtina',  emo:'🇬🇧' }, { id:'pr',  nm:'Prvouka',    emo:'🌍' },
+  { id:'tv',  nm:'Tělocvik',    emo:'🤸' }, { id:'hv',  nm:'Hudebka',    emo:'🎵' },
+  { id:'vv',  nm:'Výtvarka',    emo:'🎨' }, { id:'pc',  nm:'Pracovky',   emo:'✂️' },
+  { id:'inf', nm:'Informatika', emo:'💻' }, { id:'plav',nm:'Plavání',    emo:'🏊' },
+  { id:'dr',  nm:'Dramaťák',    emo:'🎭' }, { id:'nab', nm:'Etika',      emo:'🕊️' }
+];
+const subj = id => SUBJECTS.find(x => x.id === id) || { nm: id, emo: '📘' };
+
 const EMOJIS = ['🎒','📚','✏️','📒','🧮','🇬🇧','🧹','🧺','👕','🛏️','🍽️','🗑️','🪥','🚿','🌙','⏰','🐴','🎹','⚽','🎨','💖','📖','🐕','💧','🌱','🧸','🎵','🏃'];
 const CATS = [
   { id:'skola', nm:'Škola',    cls:'cat-skola' },
@@ -112,6 +122,7 @@ function fresh() {
     owned: ['coat:hnedak', 'mane:tmava', 'scene:louka'],
     eq: { head: null, body: null, legs: null, scene: 'louka' },
     tasks: seedTasks(),
+    schedule: { 1: [], 2: [], 3: [], 4: [], 5: [] },
     hist: {},
     badges: {},
     goal: { target: 200, reward: '', week: weekKey(new Date()), claimed: false },
@@ -124,6 +135,7 @@ function load() {
   try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { S = null; }
   if (!S || S.v !== 1) S = fresh();
   if (!S.stats) S.stats = fresh().stats;
+  if (!S.schedule) S.schedule = { 1: [], 2: [], 3: [], 4: [], 5: [] };
   decayMood();
   rollGoal();
 }
@@ -405,16 +417,38 @@ function goalHTML() {
   </div>`;
 }
 
+function schoolHTML() {
+  const d = iso(new Date());
+  const any = Object.keys(S.schedule).some(k => (S.schedule[k] || []).length);
+  if (!any) return `<div class="card"><h3 style="font-weight:800;font-size:16px">🗓️ Rozvrh hodin</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-top:5px">Vyplň si, co máš který den ve škole. Pak přidáš domácí úkol jedním klepnutím.</p>
+    <button class="btn sec" style="margin-top:12px" data-act="rozvrh">Vyplnit rozvrh</button></div>`;
+  const show = d <= 5 ? d : 1;
+  const lbl = d <= 5 ? 'Dnes ve škole' : 'V pondělí ve škole';
+  const list = S.schedule[show] || [];
+  return `<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-weight:800;font-size:16px">🎒 ${lbl}</h3>
+      <button style="color:var(--ink-soft);font-size:13px;font-weight:800" data-act="rozvrh">Upravit</button></div>
+    <div class="chips" style="margin-top:10px">${list.length
+      ? list.map(id => `<span class="chip">${subj(id).emo} ${subj(id).nm}</span>`).join('')
+      : '<span class="chip">Volno 🎉</span>'}</div>
+    <button class="btn lav" style="margin-top:13px" data-act="hw">➕ Přidat domácí úkol</button></div>`;
+}
+
 function viewDnes() {
   const list = todaysDaily(), done = list.filter(isDone).length;
   const wk = weeklyOpen().filter(t => !doneThisWeek(t));
-  return heroHTML() + goalHTML() +
+  const soon = S.tasks.filter(t => !t.arch && t.type === 'once' && !t.doneAt && t.due && t.due > TODAY())
+                      .sort((a, b) => a.due < b.due ? -1 : 1);
+  return heroHTML() + goalHTML() + schoolHTML() +
     `<div class="card"><div class="today-head">${ringHTML(done, list.length)}
       <div><h2>${done === list.length && list.length ? 'Hotovo, super! 🎉' : 'Dnešní plán'}</h2>
       <p>${list.length ? `${(list.length - done) === 0 ? 'Všechno splněno' : plur(list.length - done, 'Zbývá 1 úkol', 'Zbývají ' + (list.length - done) + ' úkoly', 'Zbývá ' + (list.length - done) + ' úkolů')} · dnes máš ${earnedOn(TODAY())} ${HS}` : 'Dnes nemáš žádný úkol'}</p></div></div></div>` +
     (list.length ? list.map(t => taskHTML(t, true)).join('') :
       `<div class="empty"><span class="big">🌈</span>Dneska máš volno! Můžeš si přidat vlastní úkol.</div>`) +
     (wk.length ? `<div class="section-title">Tento týden</div>` + wk.map(t => taskHTML(t)).join('') : '') +
+    (soon.length ? `<div class="section-title">Chystá se</div>` + soon.map(t => taskHTML(t, true)).join('') : '') +
     `<button class="btn sec" style="margin-top:6px" data-act="new">➕ Přidat úkol</button>`;
 }
 
@@ -489,6 +523,8 @@ function viewUkoly() {
     ${grp('Každý týden', a.filter(t => t.type === 'weekly'))}
     ${grp('Jednorázové', a.filter(t => t.type === 'once'))}
     <div class="section-title">Nastavení</div>
+    <button class="btn sec" data-act="rozvrh">🗓️ Rozvrh hodin</button>
+    <div style="height:10px"></div>
     <button class="btn sec" data-act="parents">⚙️ Pro rodiče a nastavení</button>`;
 }
 
@@ -630,6 +666,66 @@ function renameSheet() {
     }));
 }
 
+function scheduleSheet() {
+  let d = Math.min(Math.max(iso(new Date()), 1), 5);
+  const chips = () => SUBJECTS.map(x => `<button class="chip ${(S.schedule[d] || []).includes(x.id) ? 'on' : ''}"
+      data-sub="${x.id}">${x.emo} ${x.nm}</button>`).join('');
+  openSheet('Rozvrh hodin', `
+    <p style="font-size:13.5px;color:var(--ink-soft)">Vyber den a klepni na předměty, které ten den máš.</p>
+    <div class="days" id="schDays" style="margin-top:12px">${DOW.slice(0, 5).map((n, i) =>
+      `<button class="${i + 1 === d ? 'on' : ''}" data-day="${i + 1}">${n}</button>`).join('')}</div>
+    <label class="f">Předměty</label>
+    <div class="chips" id="schList">${chips()}</div>
+    <div style="height:18px"></div>
+    <button class="btn" data-close>Hotovo</button>`, box => {
+    box.querySelector('#schDays').addEventListener('click', e => {
+      const b = e.target.closest('[data-day]'); if (!b) return;
+      d = +b.dataset.day;
+      box.querySelectorAll('#schDays button').forEach(x => x.classList.toggle('on', +x.dataset.day === d));
+      box.querySelector('#schList').innerHTML = chips();
+    });
+    box.querySelector('#schList').addEventListener('click', e => {
+      const b = e.target.closest('[data-sub]'); if (!b) return;
+      const id = b.dataset.sub, cur = S.schedule[d] || (S.schedule[d] = []);
+      S.schedule[d] = cur.includes(id) ? cur.filter(x => x !== id)
+        : SUBJECTS.filter(x => cur.includes(x.id) || x.id === id).map(x => x.id);
+      b.classList.toggle('on', S.schedule[d].includes(id));
+      save(); render();
+    });
+  });
+}
+
+function homeworkSheet() {
+  const d = iso(new Date());
+  const mine = [...new Set([...(S.schedule[d] || []), ...(S.schedule[d === 5 || d > 5 ? 1 : d + 1] || [])])];
+  const rest = SUBJECTS.filter(x => !mine.includes(x.id)).map(x => x.id);
+  let when = 'zitra';
+  const grid = ids => ids.map(id => `<button class="item" data-hw="${id}">
+      <span class="i-ico">${subj(id).emo}</span><span class="i-nm">${subj(id).nm}</span></button>`).join('');
+  openSheet('Domácí úkol', `
+    <label class="f">Kdy to musí být hotové</label>
+    <div class="chips" id="hwWhen">
+      <button class="chip" data-w="dnes">Dnes</button>
+      <button class="chip on" data-w="zitra">Zítra</button></div>
+    ${mine.length ? `<label class="f">Z dnešního a zítřejšího rozvrhu</label><div class="shop-grid">${grid(mine)}</div>` : ''}
+    <label class="f">Ostatní předměty</label>
+    <div class="shop-grid">${grid(rest)}</div>
+    <div style="height:14px"></div>`, box => {
+    box.querySelector('#hwWhen').addEventListener('click', e => {
+      const b = e.target.closest('[data-w]'); if (!b) return;
+      when = b.dataset.w;
+      box.querySelectorAll('#hwWhen .chip').forEach(x => x.classList.toggle('on', x === b));
+    });
+    box.addEventListener('click', e => {
+      const b = e.target.closest('[data-hw]'); if (!b) return;
+      const x = subj(b.dataset.hw);
+      S.tasks.push({ id: uid(), title: 'Úkol – ' + x.nm, emo: x.emo, cat: 'skola', pts: 15,
+        type: 'once', due: when === 'dnes' ? TODAY() : dk(addD(new Date(), 1)), created: TODAY() });
+      save(); closeSheet(); render(); toast(`Úkol z ${x.nm} přidán 📚`);
+    });
+  });
+}
+
 /* ---------- události ---------- */
 document.addEventListener('click', e => {
   const tb = e.target.closest('#tabbar button');
@@ -659,6 +755,8 @@ document.addEventListener('click', e => {
     else if (a === 'parents') parentsSheet();
     else if (a === 'rename') renameSheet();
     else if (a === 'claim') claimGoal();
+    else if (a === 'rozvrh') scheduleSheet();
+    else if (a === 'hw') homeworkSheet();
     return;
   }
   if (e.target.closest('#btnProfile')) { tab = 'staj'; render(); }
