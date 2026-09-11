@@ -74,13 +74,12 @@ const BADGES = [
 
 const GEAR = [
   { id: 'head:masle',   ico: '🎀', nm: 'Mašle do hřívy', pr: 50,  slot: 'head', v: 'masle' },
-  { id: 'head:celenka', ico: '💠', nm: 'Čelenka',        pr: 80,  slot: 'head', v: 'celenka' },
-  { id: 'head:kvetiny', ico: '🌸', nm: 'Věneček',        pr: 110, slot: 'head', v: 'kvetiny' },
-  { id: 'body:deka',    ico: '🟦', nm: 'Dečka',          pr: 140, slot: 'body', v: 'deka' },
-  { id: 'head:klobouk', ico: '🤠', nm: 'Klobouk',        pr: 170, slot: 'head', v: 'klobouk' },
-  { id: 'body:sedlo',   ico: '🐎', nm: 'Závodní sedlo',  pr: 240, slot: 'body', v: 'sedlo' },
-  { id: 'body:plast',   ico: '✨', nm: 'Hvězdný plášť',  pr: 360, slot: 'body', v: 'plast' },
-  { id: 'head:roh',     ico: '🦄', nm: 'Jednorožčí roh', pr: 500, slot: 'head', v: 'roh' }
+  { id: 'head:uzdecka', ico: '🪢', nm: 'Uzdečka',        pr: 90,  slot: 'head', v: 'uzdecka' },
+  { id: 'head:kvetiny', ico: '🌸', nm: 'Květiny do hřívy', pr: 120, slot: 'head', v: 'kvetiny' },
+  { id: 'body:deka',    ico: '🟦', nm: 'Závodní dečka',  pr: 150, slot: 'body', v: 'deka' },
+  { id: 'body:sedlo',   ico: '🏇', nm: 'Sedlo',          pr: 260, slot: 'body', v: 'sedlo' },
+  { id: 'body:plast',   ico: '✨', nm: 'Hvězdná deka',   pr: 380, slot: 'body', v: 'plast' },
+  { id: 'head:roh',     ico: '🦄', nm: 'Jednorožčí roh', pr: 550, slot: 'head', v: 'roh' }
 ];
 
 const SCENES = {
@@ -98,8 +97,8 @@ const SCENES = {
     track: '#8C7458', line: '#6E5B45', tree: '#26483A', trunk: '#3A2C22', sun: '#FFF6C9', cloud: '#4A5590' }
 };
 
-const COAT_PR = { hnedak: 0, ryzka: 70, plavak: 90, belous: 110, vranik: 130, strakac: 160, ruzovy: 220, modry: 220 };
-const MANE_PR = { tmava: 0, svetla: 50, ohniva: 70, ruzova: 80, fialova: 90, duhova: 300 };
+const COAT_PR = { hnedak: 0, ryzka: 70, plavak: 100, belous: 130, vranik: 150, strakac: 190, grosak: 240, palomino: 280 };
+const MANE_PR = { tmava: 0, cerna: 50, svetla: 70, ryzava: 90, seda: 110, duhova: 320 };
 
 const EMOJIS = ['🎒','📚','✏️','📒','🔢','🇬🇧','🧹','🧺','👕','🛏️','🍽️','🗑️','🪥','🚿','🌙','⏰','🐴','🎹','⚽','🎨','💖','📖','🐕','💧','🌱','🧸','🎵','🏃'];
 const CATS = [
@@ -154,6 +153,12 @@ function load() {
   }
   if (!S.stats) S.stats = fresh().stats;
   if (S.stats.races == null) S.stats.races = 0;
+  /* po překreslení koně už některé staré barvy a doplňky neexistují */
+  if (!Horse.COATS[S.horse.coat]) S.horse.coat = 'hnedak';
+  if (!Horse.MANES[S.horse.mane]) S.horse.mane = 'tmava';
+  if (GEAR.filter(g => g.slot === 'head').every(g => g.v !== S.eq.head)) S.eq.head = null;
+  if (GEAR.filter(g => g.slot === 'body').every(g => g.v !== S.eq.body)) S.eq.body = null;
+  if (!SCENES[S.eq.scene]) S.eq.scene = 'louka';
   rollGoal();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -343,7 +348,7 @@ function closeSheet() { $('#sheet').hidden = true; }
 $('#sheet').addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeSheet(); });
 
 /* ---------- dostihová dráha ---------- */
-const runnerLeft = p => (2 + 54 * p).toFixed(1);
+const runnerLeft = p => (1 + 47 * p).toFixed(1);
 
 function runTo(p, finished) {
   const el = $('#runner');

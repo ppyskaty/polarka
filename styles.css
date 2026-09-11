@@ -63,19 +63,19 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 .track{position:relative;height:226px;overflow:hidden}
 .scene{position:absolute;inset:0;width:100%;height:100%;display:block}
 
-.runner{position:absolute;bottom:6px;width:42%;max-width:190px;left:2%;
+.runner{position:absolute;bottom:4px;width:52%;max-width:230px;left:1%;
   transition:left 1.15s cubic-bezier(.34,.9,.4,1);will-change:left}
 .horse-svg{width:100%;height:auto;display:block;filter:drop-shadow(0 6px 6px rgba(60,40,20,.22))}
 .runner .horse-svg{animation:breathe 3.8s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
 
-.runner .lg{transform-box:fill-box;transform-origin:50% 6%}
+.runner .lg{transform-box:fill-box;transform-origin:50% 2%}
 .runner.gallop .horse-svg{animation:runBob .34s linear infinite}
 .runner.gallop .lg-a{animation:legA .34s linear infinite}
 .runner.gallop .lg-b{animation:legB .34s linear infinite}
 @keyframes runBob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1.5deg)}}
-@keyframes legA{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(20deg)}}
-@keyframes legB{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-22deg)}}
+@keyframes legA{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(14deg)}}
+@keyframes legB{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-16deg)}}
 .runner.cheer .horse-svg{animation:cheer .5s ease-in-out 3}
 @keyframes cheer{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-16px) rotate(-6deg)}}
 
