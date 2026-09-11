@@ -112,6 +112,8 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 .task.done .chk{background:var(--green);border-color:var(--green)}
 .cat-skola{background:var(--lav-soft)} .cat-domov{background:var(--green-soft)}
 .cat-ja{background:var(--peach-soft)} .cat-volno{background:var(--blue-soft)}
+.welcome h3{font-size:18px;font-weight:800;margin-bottom:9px}
+.welcome p{font-size:14.5px;line-height:1.5;color:var(--ink-soft);margin-bottom:8px}
 .empty{text-align:center;color:var(--ink-soft);padding:26px 16px;font-size:14px}
 .empty .big{font-size:38px;display:block;margin-bottom:8px}
 

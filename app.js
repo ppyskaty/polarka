@@ -48,26 +48,12 @@ const catCls = c => (CATS.find(x => x.id === c) || CATS[1]).cls;
 const KEY = 'tiffany.stable.v1';
 let S = null, tab = 'dnes';
 
-function seedTasks() {
-  const t = (title, emo, cat, type, days) =>
-    ({ id: uid(), title, emo, cat, type, days: days || [1,2,3,4,5,6,7], created: TODAY() });
-  return [
-    t('Připravit si tašku do školy', '🎒', 'skola', 'daily', [1,2,3,4,5]),
-    t('Udělat domácí úkoly',         '📚', 'skola', 'daily', [1,2,3,4,5]),
-    t('Vyčistit si zuby ráno i večer','🪥', 'ja',    'daily'),
-    t('Poskládat a uklidit oblečení', '👕', 'domov', 'daily'),
-    t('Nachystat si věci na zítra',   '🌙', 'ja',    'daily', [1,2,3,4,7]),
-    t('Uklidit si pokoj',             '🧹', 'domov', 'weekly'),
-    t('Srovnat tašku a sešity',       '📒', 'skola', 'weekly')
-  ];
-}
-
 function fresh() {
   return {
     v: 3, kid: 'Tiffany',
     horse: { name: 'Hvězdička' },
     streak: { n: 0, best: 0 },
-    tasks: seedTasks(), hist: {}, gone: {},
+    tasks: [], hist: {}, gone: {},
     goal: { days: 5, reward: '', week: weekKey(new Date()), claimed: false },
     stats: { races: 0 },
     sound: true
@@ -401,6 +387,7 @@ $('#sheet').addEventListener('click', e => { if (e.target.hasAttribute('data-clo
 /* ---------- obrazovky ---------- */
 function heroHTML() {
   const pr = progress(), win = pr.total > 0 && pr.done === pr.total;
+  const virgin = !S.tasks.some(t => !t.arch);
   return `<div class="hero">
     <div class="track">
       ${sceneSVG()}${finishSVG()}
@@ -408,8 +395,8 @@ function heroHTML() {
            style="left:${runnerLeft(raceP)}%">
     </div>
     <div class="hero-foot">
-      <div class="race-lbl"><b>${win ? '🏆 V cíli!' : '🏁 Dnešní dostih'}</b>
-        <span>${pr.done} ze ${pr.total}</span></div>
+      <div class="race-lbl"><b>${virgin ? '🐴 Kůň čeká na startu' : win ? '🏆 V cíli!' : '🏁 Dnešní dostih'}</b>
+        <span>${virgin ? '' : pr.done + ' ze ' + pr.total}</span></div>
       <div class="race-bar"><i style="width:${(pr.p * 100).toFixed(1)}%"></i></div>
     </div></div>`;
 }
@@ -449,6 +436,13 @@ function taskHTML(t, showWhen) {
 
 function viewDnes() {
   const list = todaysTasks(), done = list.filter(isDone).length, left = list.length - done;
+  const virgin = !S.tasks.some(t => !t.arch);
+  if (virgin) return heroHTML() + `<div class="card welcome">
+      <h3>👋 Vítej ve stáji!</h3>
+      <p>Zatím tu nejsou žádné úkoly. Domluv se s rodiči, co budeš plnit, a přidej si je sem.</p>
+      <p>Každý splněný úkol popožene koně po dráze. Když stihneš všechny, dojede do cíle.</p>
+      <button class="btn" style="margin-top:14px" data-act="new">➕ Přidat první úkol</button>
+    </div>` + schoolHTML();
   const wk = weeklyOpen().filter(t => !doneThisWeek(t));
   const soon = S.tasks.filter(t => !t.arch && t.type === 'once' && !t.doneAt && t.due && t.due > TODAY())
                       .sort((a, b) => a.due < b.due ? -1 : 1);
