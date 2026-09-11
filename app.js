@@ -67,7 +67,7 @@ function fresh() {
     v: 3, kid: 'Tiffany',
     horse: { name: 'Hvězdička' },
     streak: { n: 0, best: 0 },
-    tasks: seedTasks(), hist: {},
+    tasks: seedTasks(), hist: {}, gone: {},
     goal: { days: 5, reward: '', week: weekKey(new Date()), claimed: false },
     stats: { races: 0 },
     sound: true
@@ -98,6 +98,7 @@ function load() {
     if (old.goal) S.goal.reward = old.goal.reward || '';
   }
   if (!S.stats) S.stats = { races: 0 };
+  if (!S.gone) S.gone = {};
   rollGoal();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -464,7 +465,7 @@ function viewDnes() {
 function viewTyden() {
   const { days, label } = periodRange(), st = statsFor(days), td = TODAY();
   const isWeek = period === 'week';
-  const taskName = id => (S.tasks.find(t => t.id === id) || {});
+  const taskName = id => (S.tasks.find(t => t.id === id) || S.gone[id] || {});
 
   const strip = isWeek ? `<div class="week-strip">${days.map((k, i) => {
       const req = expectedFor(k), h = S.hist[k];
@@ -483,7 +484,8 @@ function viewTyden() {
 
   const rows = Object.keys(st.per).map(id => {
     const t = taskName(id), p = st.per[id], pc = p.exp ? Math.round(p.done / p.exp * 100) : 0;
-    return { emo: t.emo || '•', title: t.title || 'Smazaný úkol', ...p, pc };
+    const gone = !S.tasks.some(x => x.id === id);
+    return { emo: t.emo || '•', title: (t.title || 'Smazaný úkol') + (gone ? ' · smazáno' : ''), ...p, pc };
   }).sort((a, b) => a.pc - b.pc);
 
   return `<div class="seg" id="seg">
@@ -533,7 +535,8 @@ function viewUkoly() {
         <div class="ts">${t.type === 'daily' ? (t.days || []).map(d => DOW[d - 1]).join(' ')
           : t.type === 'weekly' ? 'Každý týden' : (t.due || 'jednorázově')}</div></div>
       <div class="chev">›</div></div>`).join('') : '';
-  const a = S.tasks.filter(t => !t.arch);
+  const stale = dk(addD(new Date(), -14));
+  const a = S.tasks.filter(t => !t.arch && !(t.type === 'once' && t.doneAt && t.doneAt < stale));
   return `<button class="btn" data-act="new">➕ Nový úkol</button>
     ${grp('Každý den', a.filter(t => t.type === 'daily'))}
     ${grp('Každý týden', a.filter(t => t.type === 'weekly'))}
@@ -604,9 +607,12 @@ function editSheet(t) {
     });
     const del = box.querySelector('#fDel');
     if (del) del.addEventListener('click', () => {
-      if (!confirm('Opravdu smazat tento úkol?')) return;
+      if (!confirm(`Smazat úkol „${d.title}"?\n\nZmizí ze seznamu a už se nikdy neobjeví. ` +
+                   `V přehledu minulých týdnů zůstane, aby čísla za odehrané dny seděla.`)) return;
+      const cur = S.tasks.find(x => x.id === d.id);
+      if (cur) S.gone[cur.id] = { title: cur.title, emo: cur.emo };
       S.tasks = S.tasks.filter(x => x.id !== d.id);
-      closeSheet(); tasksChanged(); toast('Smazáno');
+      closeSheet(); tasksChanged(); toast('Úkol smazán');
     });
   });
 }
