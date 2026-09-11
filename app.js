@@ -119,7 +119,8 @@ const day = k => {
   if (k === TODAY() || !h.req) h.req = reqIds(k);
   return h;
 };
-const expectedFor = k => { const h = S.hist[k]; return (h && h.req) ? h.req : reqIds(k); };
+const expectedFor = k => (k === TODAY() ? reqIds(k)
+  : ((S.hist[k] && S.hist[k].req) || reqIds(k)));
 function weekDays(d) { const m = monday(d || new Date()); return [0,1,2,3,4,5,6].map(i => dk(addD(m, i))); }
 function doneToday(t) { return !!day(TODAY()).done[t.id]; }
 function doneThisWeek(t) { return weekDays().some(k => S.hist[k] && S.hist[k].done[t.id]); }
@@ -144,6 +145,7 @@ function progress() {
   return { done: d, total: l.length, p: l.length ? d / l.length : 0 };
 }
 const weekWins = () => weekDays().filter(dayComplete).length;
+const totalRaces = () => Object.keys(S.hist).filter(dayComplete).length;
 
 const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen',
                 'Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
@@ -214,6 +216,14 @@ function dueLabel(due) {
   return 'Do ' + (+due.slice(8)) + '. ' + (+due.slice(5, 7)) + '.';
 }
 
+/* Změna seznamu úkolů mění dnešní dostih, sérii i statistiku. */
+function tasksChanged() {
+  day(TODAY());
+  recalcStreak();
+  save(); render();
+  raceTo(progress().p);
+}
+
 function recalcStreak() {
   let k = TODAY(), n = 0;
   if (!dayComplete(k)) k = dk(addD(new Date(), -1));
@@ -282,7 +292,11 @@ function finishSVG() {
 function raceTo(target, finished) {
   const el = document.getElementById('runner');
   if (!el) { raceP = target; return; }
-  if (target <= raceP) { raceP = target; el.style.left = runnerLeft(raceP) + '%'; return; }
+  if (target <= raceP) {
+    raceP = target; void el.offsetWidth;
+    requestAnimationFrame(() => { el.style.left = runnerLeft(target) + '%'; });
+    return;
+  }
   clearTimeout(raceT);
   el.src = HORSE.run;
   el.classList.add('running');
@@ -309,7 +323,6 @@ function toggleTask(t) {
   if (t.type === 'once') t.doneAt = k;
   const after = progress();
   const finished = after.total > 0 && after.done === after.total && t.type !== 'weekly';
-  if (finished && dayComplete(k)) S.stats.races++;
   recalcStreak(); save(); render();
   if (t.type === 'weekly') { confetti(40); ding(false); toast('Týdenní úkol hotový 👏'); return; }
   raceTo(after.p, finished);
@@ -407,7 +420,7 @@ function goalHTML() {
     <div class="goal-top"><h3>🎁 Cíl týdne</h3><span class="goal-num">${w} z ${t} ${plur(t, 'dne', 'dnů', 'dnů')}</span></div>
     <div class="race-bar gold"><i style="width:${p * 100}%"></i></div>
     ${S.goal.reward ? `<div class="rew">Odměna: <b>${S.goal.reward}</b></div>`
-      : `<div class="rew">Odměnu vyplní rodiče v nastavení</div>`}
+      : `<button class="rew rew-btn" data-act="parents">Odměnu vyplní rodiče →</button>`}
     ${ready ? `<button class="btn gold" style="margin-top:12px" data-act="claim">Vyzvednout odměnu 🎉</button>` : ''}
     ${S.goal.claimed ? `<div class="rew">✅ Splněno — hurá!</div>` : ''}</div>`;
 }
@@ -483,7 +496,7 @@ function viewTyden() {
     ${pOff !== 0 ? '' : `<div class="card streak-card">
       <div class="streak-ico">🔥</div>
       <div><h2>${S.streak.n} ${plur(S.streak.n, 'den', 'dny', 'dní')} v řadě</h2>
-      <p>Nejdelší série ${S.streak.best} · dostihů celkem ${S.stats.races}</p></div></div>`}
+      <p>Nejdelší série ${S.streak.best} · dostihů celkem ${totalRaces()}</p></div></div>`}
 
     <div class="kpi">
       <div class="k ok"><b>${st.done}</b><span>splněno</span></div>
@@ -585,13 +598,13 @@ function editSheet(t) {
       if (d.type === 'daily' && !(d.days || []).length) d.days = [1,2,3,4,5,6,7];
       const i = S.tasks.findIndex(x => x.id === d.id);
       if (i >= 0) S.tasks[i] = d; else S.tasks.push(d);
-      save(); closeSheet(); raceP = progress().p; render(); toast(nw ? 'Úkol přidán 🎉' : 'Uloženo ✓');
+      closeSheet(); tasksChanged(); toast(nw ? 'Úkol přidán 🎉' : 'Uloženo ✓');
     });
     const del = box.querySelector('#fDel');
     if (del) del.addEventListener('click', () => {
       if (!confirm('Opravdu smazat tento úkol?')) return;
       S.tasks = S.tasks.filter(x => x.id !== d.id);
-      save(); closeSheet(); raceP = progress().p; render(); toast('Smazáno');
+      closeSheet(); tasksChanged(); toast('Smazáno');
     });
   });
 }
@@ -643,7 +656,7 @@ function homeworkSheet() {
                 : (box.querySelector('#hwD').value || dk(addD(new Date(), 7)));
       S.tasks.push({ id: uid(), title: 'Úkol – ' + nm, emo: x.ico, cat: 'skola', type: 'once',
         due, created: TODAY() });
-      save(); closeSheet(); raceP = progress().p; render();
+      closeSheet(); tasksChanged();
       toast(`Úkol z ${nm}: ${dueLabel(due).toLowerCase()} 📚`);
     });
   });

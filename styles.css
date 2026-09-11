@@ -38,6 +38,10 @@ h1,h2,h3,p,ol,ul{margin:0} ol,ul{padding:0;list-style:none}
   display:flex;align-items:center;gap:5px;font-weight:800;font-size:15px;box-shadow:var(--sh-s);
   font-variant-numeric:tabular-nums}
 .stat i{font-style:normal;font-size:11px;color:var(--ink-soft);font-weight:700}
+.stats{display:flex;align-items:center;gap:8px}
+.icon-btn{width:38px;height:38px;border-radius:13px;background:#fff;border:1px solid var(--line);
+  box-shadow:var(--sh-s);display:grid;place-items:center;font-size:17px;flex:0 0 auto}
+.icon-btn:active{transform:scale(.94)}
 
 main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 22px)}
 .section-title{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
@@ -78,6 +82,8 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 .goal-num{font-size:13.5px;font-weight:800;color:#9A6B2E;font-variant-numeric:tabular-nums}
 .goal .race-bar{background:rgba(255,255,255,.6)}
 .goal .rew{font-size:13.5px;margin-top:10px;font-weight:700;color:#9A6B2E}
+.goal .rew-btn{display:block;width:100%;text-align:left;text-decoration:underline;
+  text-underline-offset:3px;text-decoration-color:#D7B27A}
 
 /* ---------- rozvrh ---------- */
 .lessons li{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:14.5px;font-weight:700;
