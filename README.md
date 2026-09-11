@@ -10,19 +10,26 @@ jako normální aplikace, funguje offline a **všechna data zůstávají v telef
 
 ## Jak to funguje
 
+Jádro je **dnešní dostih**. Dnešní úkoly jsou dráha: každý splněný úkol
+posune koně o kus blíž k cíli a zároveň se o něj nějak postará. Ráno je kůň
+zanedbaný — špinavý, s rozcuchanou hřívou a přerostlými kopyty. Postupně ho
+nakrmíš, napojíš, umyješ, vyčešeš, okováš a osedláš; po posledním úkolu
+proběhne cílem s rozetou. Žádné krmení za body nezávisle na úkolech.
+
 | Prvek | Popis |
 |---|---|
-| 🧲 **Podkovy** | Měna. Za splněný úkol dostane podkovy podle jeho hodnoty. |
-| ⭐ **Úrovně** | Podkovy se sčítají do zkušeností: Hříbátko → … → Legenda stáje (10 úrovní). |
-| 🐴 **Vlastní kůň** | Má jméno, barvu srsti, hřívu a doplňky. Za podkovy se dá krmit a oblékat. |
-| 💗 **Nálada koně** | Roste plněním úkolů a krmením, sama pomalu klesá (nikdy ne pod 35 %, kůň nikdy nestrádá). Nad 85 % dává bonus +20 % podkov. |
-| 🔥 **Série** | Počet dní v řadě, kdy splnila všechny denní úkoly. |
+| 🏁 **Dnešní dostih** | Úkoly = dráha. Každé splnění = posun + jeden krok péče (seno, voda, mytí, hříva, kopyta, sedlo, cíl). |
+| 🐴 **Stav koně** | Mění se s postupem: špína mizí, hříva se vyčeše, kopyta se zkrátí, kůň se probudí a rozzáří. |
+| 🧲 **Podkovy** | Za splněný úkol. Slouží jako zkušenosti i jako měna v obchodě. |
+| ⭐ **Úrovně** | 10 stupňů: Hříbátko → … → Legenda stáje. |
+| 🔥 **Série** | Počet dní v řadě, kdy dojela do cíle. |
 | 🎁 **Cíl týdne** | Rodiče nastaví počet podkov a odměnu, na které se doma domluvíte. |
-| 🏅 **Odznaky** | 12 achievementů (první úkol, týden v řadě, 10 úkolů do školy…). |
+| 🏅 **Odznaky** | 12 achievementů (první dostih, týden v řadě, 10 úkolů do školy…). |
+| 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy na celý rok. Domácí úkol se přidá klepnutím na předmět. |
 | ✏️ **Vlastní úkoly** | Sama si přidá úkol: název, obrázek, kategorii, hodnotu a jak často. |
-| 🗓️ **Rozvrh hodin** | Zadá se jednou. Domácí úkol pak přidá jedním klepnutím na předmět, s termínem na dnes nebo na zítra. |
+| 🎨 **Obchod** | Doplňky, barvy srsti, hřívy a čtyři scény stáje (louka, západ, hory, noc). |
 
-Denní bonus: když splní všechny dnešní úkoly, dostane **+15 podkov navíc**.
+Za splnění všech dnešních úkolů je bonus **+15 podkov**.
 
 ## Instalace na iPhone
 
@@ -54,8 +61,9 @@ Struktura:
 
 - `index.html` — kostra aplikace
 - `styles.css` — vzhled
-- `app.js` — logika, data, ekonomika, obrazovky
-- `horse.js` — parametrický SVG kůň (barvy, hříva, doplňky)
+- `app.js` — logika, data, ekonomika, obrazovky, dostih
+- `horse.js` — parametrický SVG kůň (barvy, hříva, doplňky, stav péče 0–5)
+- `build-preview.py` — sloučí appku do jednoho HTML souboru na náhled
 - `sw.js` — service worker (offline režim)
 - `make_icons.py` — generátor ikon (podkova)
 
