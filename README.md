@@ -10,26 +10,29 @@ jako normální aplikace, funguje offline a **všechna data zůstávají v telef
 
 ## Jak to funguje
 
-Jádro je **dnešní dostih**. Dnešní úkoly jsou dráha: každý splněný úkol
-posune koně o kus blíž k cíli a zároveň se o něj nějak postará. Ráno je kůň
-zanedbaný — špinavý, s rozcuchanou hřívou a přerostlými kopyty. Postupně ho
-nakrmíš, napojíš, umyješ, vyčešeš, okováš a osedláš; po posledním úkolu
-proběhne cílem s rozetou. Žádné krmení za body nezávisle na úkolech.
+Jediná mechanika: **dnešní dostih**. Dnešní úkoly jsou dráha. Každý splněný
+úkol rozeběhne koně o kus blíž k cílové vlajce; poslední úkol znamená cíl.
+Nic jiného — žádná měna, žádný obchod, žádné úrovně, žádné odznaky.
 
 | Prvek | Popis |
 |---|---|
-| 🏁 **Dnešní dostih** | Úkoly = dráha. Každé splnění = posun + jeden krok péče (seno, voda, mytí, hříva, kopyta, sedlo, cíl). |
-| 🐴 **Stav koně** | Mění se s postupem: špína mizí, hříva se vyčeše, kopyta se zkrátí, kůň se probudí a rozzáří. |
-| 🧲 **Podkovy** | Za splněný úkol. Slouží jako zkušenosti i jako měna v obchodě. |
-| ⭐ **Úrovně** | 10 stupňů: Hříbátko → … → Legenda stáje. |
+| 🏁 **Dnešní dostih** | Úkoly = dráha. Splněný úkol = posun a cvalová animace. Všechno hotovo = cíl a konfety. |
 | 🔥 **Série** | Počet dní v řadě, kdy dojela do cíle. |
-| 🎁 **Cíl týdne** | Rodiče nastaví počet podkov a odměnu, na které se doma domluvíte. |
-| 🏅 **Odznaky** | 12 achievementů (první dostih, týden v řadě, 10 úkolů do školy…). |
-| 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy na celý rok. Domácí úkol se přidá klepnutím na předmět. |
-| ✏️ **Vlastní úkoly** | Sama si přidá úkol: název, obrázek, kategorii, hodnotu a jak často. |
-| 🎨 **Obchod** | Doplňky, barvy srsti, hřívy a čtyři scény stáje (louka, západ, hory, noc). |
+| 🎁 **Cíl týdne** | Kolik dnů v týdnu má dojet do cíle a co za to. Nastaví rodiče. |
+| 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy. Domácí úkol se přidá klepnutím na předmět. |
+| ✏️ **Vlastní úkoly** | Název, obrázek, kategorie a jak často. Bez bodování — úkol je úkol. |
 
-Za splnění všech dnešních úkolů je bonus **+15 podkov**.
+## Grafika
+
+Pixel art, kreslený po pixelech ve složce `pixel/`:
+
+- `pixel/sprite.py` — kůň 64×46 px: tvar po řádcích, celové stínování podle
+  tvaru, obrys, prameny hřívy a ocasu, čtyři fáze cvalu.
+- `pixel/scene.py` — dráha 180×80 px: obloha s ditheringem na přechodech,
+  slunce, mraky, kopce s lesní siluetou, ohradník, tráva, hlína, cílová vlajka.
+
+Obojí generuje PNG do `assets/`. Po úpravě spusťte `python3 pixel/scene.py`
+(vyrobí scénu i spritesheet) a zvyšte `V` v `sw.js`.
 
 ## Instalace na iPhone
 
@@ -61,8 +64,8 @@ Struktura:
 
 - `index.html` — kostra aplikace
 - `styles.css` — vzhled
-- `app.js` — logika, data, ekonomika, obrazovky, dostih
-- `horse.js` — parametrický SVG kůň (barvy, hříva, doplňky, stav péče 0–5)
+- `app.js` — logika, data, obrazovky, dostih
+- `assets/` — vygenerované pixelové PNG (scéna a spritesheet koně)
 - `build-preview.py` — sloučí appku do jednoho HTML souboru na náhled
 - `sw.js` — service worker (offline režim)
 - `make_icons.py` — generátor ikon (podkova)

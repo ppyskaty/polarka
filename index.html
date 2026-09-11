@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Stáj Tiffany</title>
-<meta name="theme-color" content="#FFF7EE">
+<meta name="theme-color" content="#FFF6EA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,28 +18,17 @@
 
 <div id="app">
   <header class="topbar">
-    <button class="avatar-btn" id="btnProfile" aria-label="Profil">
-      <span id="miniHorse" class="mini-horse"></span>
-    </button>
-    <div class="topbar-mid">
-      <div class="level-row">
-        <span id="levelName" class="level-name">Hříbátko</span>
-        <span id="levelNum" class="level-num">1</span>
-      </div>
-      <div class="xpbar"><i id="xpFill"></i></div>
-    </div>
+    <div class="brand"><b>Stáj</b><span id="horseName">Hvězdička</span></div>
     <div class="stats">
-      <div class="stat" id="statCoins"><span class="hs"></span><b>0</b></div>
-      <div class="stat" id="statStreak"><span class="stat-ico">🔥</span><b>0</b></div>
+      <div class="stat" id="statStreak"><span>🔥</span><b>0</b><i>dní v řadě</i></div>
     </div>
   </header>
 
   <main id="screen"></main>
 
   <nav class="tabbar" id="tabbar">
-    <button data-tab="dnes" class="on"><span>📋</span>Dnes</button>
+    <button data-tab="dnes" class="on"><span>🏁</span>Dnes</button>
     <button data-tab="tyden"><span>🗓️</span>Týden</button>
-    <button data-tab="staj"><span>🐴</span>Stáj</button>
     <button data-tab="ukoly"><span>✏️</span>Úkoly</button>
   </nav>
 </div>
@@ -55,7 +44,6 @@
 <div id="toast" class="toast" hidden></div>
 <canvas id="confetti"></canvas>
 
-<script src="horse.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
