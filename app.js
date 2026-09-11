@@ -254,6 +254,7 @@ function ding(big) {
   if (!S.sound) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
     (big ? [523, 659, 784, 1047, 1319] : [660, 880, 1170]).forEach((f, i) => {
       const t = i * .085, o = actx.createOscillator(), g = actx.createGain();
       o.type = 'square'; o.frequency.value = f;
