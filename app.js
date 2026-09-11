@@ -83,18 +83,22 @@ const GEAR = [
 ];
 
 const SCENES = {
-  louka: { nm: 'Louka', ico: '🌳', pr: 0,
-    sky: ['#B6E6FB', '#EAF8FF'], far: '#A8D592', near: '#7FC066', grass: '#6FB257',
-    track: '#DDAF77', line: '#C9945A', tree: '#4E8F4A', trunk: '#7A5638', sun: '#FFE07A', cloud: '#FFFFFF' },
-  zapad: { nm: 'Západ slunce', ico: '🌇', pr: 200,
-    sky: ['#FFC07A', '#FF9E8E'], far: '#C98D6E', near: '#9F6A50', grass: '#8A5A43',
-    track: '#E0B184', line: '#C08E5F', tree: '#6B4636', trunk: '#4E3226', sun: '#FFF0B8', cloud: '#FFD9C2' },
-  hory:  { nm: 'Hory', ico: '🏔️', pr: 300,
-    sky: ['#A8D8F5', '#E4F3FC'], far: '#9FB6C4', near: '#86B473', grass: '#6FA75F',
-    track: '#D3AE84', line: '#B8916A', tree: '#3F7A46', trunk: '#6B4A32', sun: '#FFF6D0', cloud: '#FFFFFF' },
-  noc:   { nm: 'Hvězdná noc', ico: '🌙', pr: 450,
-    sky: ['#2B3470', '#6C5F9E'], far: '#3E4A6B', near: '#39554A', grass: '#2F4A40',
-    track: '#8C7458', line: '#6E5B45', tree: '#26483A', trunk: '#3A2C22', sun: '#FFF6C9', cloud: '#4A5590' }
+  louka: { nm:'Louka', ico:'🌳', pr:0, night:false,
+    sky:['#7FC2E8','#C9E6F5'], haze:'#EDF6FB', sun:'#FFF6D2', cloud:'#FFFFFF',
+    far:'#A7C3A6', mid:'#84B26E', grass:['#7FB765','#548F45'],
+    track:['#D9AC74','#AD7F4C'], tree:['#4E8C4A','#2F5C31'], trunk:'#6A4B31' },
+  zapad: { nm:'Západ slunce', ico:'🌇', pr:200, night:false,
+    sky:['#F0A863','#FFD6A8'], haze:'#FFE4C4', sun:'#FFF4D8', cloud:'#FFC9A4',
+    far:'#B08A76', mid:'#8E6A52', grass:['#8A6349','#5E4130'],
+    track:['#DDAF80','#A87A50'], tree:['#5C4032','#33231B'], trunk:'#3E2A1E' },
+  hory: { nm:'Hory', ico:'🏔️', pr:300, night:false,
+    sky:['#93C9EC','#DCEEF9'], haze:'#EAF4FB', sun:'#FFFBE8', cloud:'#FFFFFF',
+    far:'#A9BCC9', mid:'#7FA76A', grass:['#79AC61','#4F8742'],
+    track:['#D2AB80','#A47F58'], tree:['#3E7A45','#26522E'], trunk:'#5C432E' },
+  noc: { nm:'Hvězdná noc', ico:'🌙', pr:450, night:true,
+    sky:['#1D2550','#5A5286'], haze:'#6E6494', sun:'#FFF8DC', cloud:'#3E4570',
+    far:'#39405E', mid:'#33513F', grass:['#33523F','#1F3628'],
+    track:['#8A7358','#5E4C39'], tree:['#1F4030','#12271D'], trunk:'#2A1F18' }
 };
 
 const COAT_PR = { hnedak: 0, ryzka: 70, plavak: 100, belous: 130, vranik: 150, strakac: 190, grosak: 240, palomino: 280 };
@@ -364,35 +368,97 @@ function runTo(p, finished) {
 
 function sceneSVG() {
   const s = SCENES[S.eq.scene] || SCENES.louka;
-  const u = 's' + Math.random().toString(36).slice(2, 7);
-  const night = S.eq.scene === 'noc';
+  const u = 'sc' + Math.random().toString(36).slice(2, 7);
+
   const tree = (x, y, k) => `<g transform="translate(${x},${y}) scale(${k})">
-      <rect x="-3" y="-8" width="6" height="16" rx="2" fill="${s.trunk}"/>
-      <circle cy="-18" r="15" fill="${s.tree}"/><circle cx="-11" cy="-9" r="11" fill="${s.tree}"/>
-      <circle cx="11" cy="-9" r="11" fill="${s.tree}"/></g>`;
-  const cloud = (x, y, k) => `<g transform="translate(${x},${y}) scale(${k})" fill="${s.cloud}" opacity=".9">
-      <ellipse rx="20" ry="11"/><ellipse cx="-15" cy="4" rx="13" ry="8"/><ellipse cx="16" cy="3" rx="14" ry="9"/></g>`;
+      <ellipse cy="3" rx="17" ry="4" fill="#000" opacity=".16"/>
+      <path d="M-3 4 C-4.5 -6 -3.5 -15 -2.5 -21 L3.5 -21 C4.5 -15 4.5 -6 3 4 Z" fill="${s.trunk}"/>
+      <path d="M1 -45 C13 -45 23 -37 23 -27 C26 -19 19 -10 9 -9 C3 -5 -7 -6 -11 -11
+               C-22 -12 -26 -21 -22 -29 C-21 -39 -11 -45 1 -45 Z" fill="${s.tree[0]}"/>
+      <path d="M-11 -11 C-22 -12 -26 -21 -22 -29 C-17 -20 -13 -14 -6 -8 Z" fill="${s.tree[1]}"/>
+      <path d="M-2 -9 C-8 -8 -12 -12 -12 -17 C-6 -14 -2 -12 2 -9 Z" fill="${s.tree[1]}" opacity=".75"/>
+      <path d="M4 -41 C14 -40 20 -34 21 -28 C15 -34 9 -38 4 -41 Z" fill="#FFF" opacity=".16"/>
+    </g>`;
+
+  const cloud = (x, y, k, o) => `<g transform="translate(${x},${y}) scale(${k})" opacity="${o}">
+      <ellipse rx="24" ry="9" fill="${s.cloud}"/><ellipse cx="-17" cy="4" rx="15" ry="7" fill="${s.cloud}"/>
+      <ellipse cx="18" cy="3" rx="17" ry="8" fill="${s.cloud}"/>
+      <ellipse cx="2" cy="-6" rx="14" ry="8" fill="${s.cloud}"/></g>`;
+
+  const tuft = x => `<path d="M${x} 187 C${x - 1} 182 ${x - 3} 179 ${x - 4} 177
+      C${x - 1} 179 ${x} 181 ${x + 1} 184 C${x + 1} 180 ${x + 2} 177 ${x + 4} 175
+      C${x + 3} 179 ${x + 2} 183 ${x + 2} 187 Z" fill="${s.grass[1]}"/>`;
+
+  let speck = '';
+  for (let i = 0; i < 46; i++) {
+    const x = (i * 53 % 397) + 2, y = 190 + (i * 29 % 28), r = .8 + (i % 3) * .5;
+    speck += `<circle cx="${x}" cy="${y}" r="${r}" fill="${i % 2 ? '#000' : '#FFF'}" opacity=".08"/>`;
+  }
+
   return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <defs><linearGradient id="${u}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${s.sky[0]}"/><stop offset="1" stop-color="${s.sky[1]}"/></linearGradient></defs>
-    <rect width="400" height="220" fill="url(#${u})"/>
-    ${night
-      ? `<circle cx="330" cy="40" r="20" fill="${s.sun}"/><circle cx="322" cy="34" r="18" fill="${s.sky[0]}"/>
-         ${[[40,30],[92,54],[150,26],[214,48],[268,22],[300,72],[60,80],[190,72]].map(([x, y]) =>
-           `<circle cx="${x}" cy="${y}" r="1.8" fill="#FFF8D8" opacity=".9"/>`).join('')}`
-      : `<circle cx="332" cy="42" r="24" fill="${s.sun}" opacity=".95"/>`}
-    ${cloud(70, 40, 1)}${cloud(230, 30, .75)}${cloud(160, 66, .55)}
-    <path d="M0 132 C60 108 110 122 168 110 C230 97 290 116 400 104 L400 156 L0 156 Z" fill="${s.far}"/>
-    ${tree(36, 140, .95)}${tree(300, 136, .8)}${tree(366, 142, 1.05)}${tree(232, 138, .62)}
-    <path d="M0 150 C80 136 150 150 240 142 C320 135 360 146 400 140 L400 176 L0 176 Z" fill="${s.near}"/>
-    <g stroke="${night ? '#6B5A48' : '#EFE0C8'}" stroke-width="4" stroke-linecap="round" opacity=".95">
-      ${[20, 86, 152, 218, 284, 350].map(x => `<path d="M${x} 150 v22"/>`).join('')}
-      <path d="M0 156 H400" stroke-width="3.4"/><path d="M0 166 H400" stroke-width="3.4"/></g>
-    <rect y="172" width="400" height="16" fill="${s.grass}"/>
-    <rect y="186" width="400" height="34" fill="${s.track}"/>
-    <g opacity=".5" stroke="${s.line}" stroke-width="2.5" stroke-linecap="round">
-      ${[10,44,78,112,146,180,214,248,282,316,350,384].map(x => `<path d="M${x} 205 h16"/>`).join('')}</g>
-    <path d="M0 186 H400" stroke="${s.line}" stroke-width="2" opacity=".6"/>
+    <defs>
+      <linearGradient id="sky-${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${s.sky[0]}"/><stop offset="1" stop-color="${s.sky[1]}"/></linearGradient>
+      <linearGradient id="gr-${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${s.grass[0]}"/><stop offset="1" stop-color="${s.grass[1]}"/></linearGradient>
+      <linearGradient id="tr-${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${s.track[1]}"/><stop offset=".3" stop-color="${s.track[0]}"/>
+        <stop offset="1" stop-color="${s.track[1]}"/></linearGradient>
+      <linearGradient id="hz-${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${s.haze}" stop-opacity="0"/>
+        <stop offset="1" stop-color="${s.haze}" stop-opacity=".85"/></linearGradient>
+      <radialGradient id="sun-${u}"><stop offset="0" stop-color="${s.sun}" stop-opacity=".95"/>
+        <stop offset=".45" stop-color="${s.sun}" stop-opacity=".35"/>
+        <stop offset="1" stop-color="${s.sun}" stop-opacity="0"/></radialGradient>
+      <filter id="sb-${u}" x="-30%" y="-60%" width="160%" height="260%">
+        <feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="gn-${u}" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/>
+        <feColorMatrix type="saturate" values="0"/></filter>
+    </defs>
+
+    <rect width="400" height="220" fill="url(#sky-${u})"/>
+    ${s.night
+      ? `${[[38,28],[92,52],[148,24],[212,46],[268,20],[304,70],[62,78],[186,68],[340,34],[124,86]]
+           .map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.2 : 1.8}" fill="#FFF8D8"
+             opacity="${i % 2 ? .9 : .55}"/>`).join('')}
+         <circle cx="326" cy="42" r="36" fill="url(#sun-${u})"/>
+         <circle cx="326" cy="42" r="17" fill="${s.sun}"/>
+         <circle cx="317" cy="36" r="15" fill="${s.sky[0]}"/>`
+      : `<circle cx="330" cy="40" r="52" fill="url(#sun-${u})"/>
+         <circle cx="330" cy="40" r="20" fill="${s.sun}"/>`}
+    <g filter="url(#sb-${u})">${cloud(72, 42, 1, .92)}${cloud(238, 30, .8, .8)}${cloud(168, 70, .6, .6)}</g>
+
+    <path d="M0 124 C54 106 104 120 162 110 C226 99 288 114 400 102 L400 150 L0 150 Z" fill="${s.far}"/>
+    <path d="M0 122 C22 120 34 112 48 112 C60 112 66 118 78 117 C92 116 100 108 114 109
+             C128 110 134 117 148 115 C164 113 172 106 188 107 L188 128 L0 130 Z"
+          fill="${s.tree[0]}" opacity=".45"/>
+    <rect y="96" width="400" height="58" fill="url(#hz-${u})"/>
+
+    <path d="M0 146 C78 132 150 148 240 139 C318 131 360 143 400 136 L400 176 L0 176 Z" fill="${s.mid}"/>
+    ${tree(34, 168, 1)}${tree(300, 164, .82)}${tree(370, 170, 1.08)}${tree(228, 160, .58)}
+
+    <g opacity=".95">
+      <g fill="#000" opacity=".14">${[22,88,154,220,286,352].map(x =>
+        `<ellipse cx="${x + 3}" cy="173" rx="7" ry="2.4"/>`).join('')}</g>
+      <g stroke="${s.night ? '#7A6A56' : '#F3E7D2'}" stroke-linecap="round">
+        <path d="M0 155 H400" stroke-width="3.6"/><path d="M0 166 H400" stroke-width="3.6"/>
+        ${[22,88,154,220,286,352].map(x => `<path d="M${x} 148 v25" stroke-width="4.6"/>`).join('')}</g>
+      <g stroke="#000" opacity=".12" stroke-linecap="round">
+        <path d="M0 157 H400" stroke-width="1.4"/><path d="M0 168 H400" stroke-width="1.4"/></g>
+    </g>
+
+    <rect y="170" width="400" height="18" fill="url(#gr-${u})"/>
+    <g opacity=".55">${[8,26,47,66,88,112,133,158,182,204,228,251,274,296,318,341,364,388].map(tuft).join('')}</g>
+
+    <rect y="186" width="400" height="34" fill="url(#tr-${u})"/>
+    <rect y="186" width="400" height="34" filter="url(#gn-${u})" opacity=".16" style="mix-blend-mode:overlay"/>
+    <path d="M0 186 H400" stroke="#000" stroke-width="4" opacity=".13"/>
+    <g opacity=".28" stroke="${s.track[1]}" stroke-width="2.5" stroke-linecap="round">
+      ${[10,52,94,136,178,220,262,304,346,388].map(x => `<path d="M${x} 204 h18"/>`).join('')}</g>
+    <path d="M0 197 C90 199 180 196 400 198" stroke="${s.track[1]}" stroke-width="2"
+          opacity=".22" fill="none"/>
+    ${speck}
   </svg>`;
 }
 
