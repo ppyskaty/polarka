@@ -531,7 +531,7 @@ function viewUkoly() {
       <div class="emo ${catCls(t.cat)}">${t.emo}</div>
       <div class="tx"><div class="tt">${t.title}</div>
         <div class="ts">${t.type === 'daily' ? (t.days || []).map(d => DOW[d - 1]).join(' ')
-          : t.type === 'weekly' ? '1× týdně' : (t.due || 'jednorázově')}</div></div>
+          : t.type === 'weekly' ? 'Každý týden' : (t.due || 'jednorázově')}</div></div>
       <div class="chev">›</div></div>`).join('') : '';
   const a = S.tasks.filter(t => !t.arch);
   return `<button class="btn" data-act="new">➕ Nový úkol</button>
@@ -554,7 +554,7 @@ function render() {
 /* ---------- editor úkolu ---------- */
 function editSheet(t) {
   const nw = !t;
-  t = t || { id: uid(), title: '', emo: '✏️', cat: 'domov', type: 'daily', days: [1,2,3,4,5], created: TODAY() };
+  t = t || { id: uid(), title: '', emo: '✏️', cat: 'domov', type: 'daily', days: [1,2,3,4,5,6,7], created: TODAY() };
   const d = JSON.parse(JSON.stringify(t));
   openSheet(nw ? 'Nový úkol' : 'Upravit úkol', `
     <label class="f">Co mám udělat?</label>
@@ -564,8 +564,10 @@ function editSheet(t) {
     <label class="f">Kam patří</label>
     <div class="chips" id="fC">${CATS.map(c => `<button class="chip ${c.id === d.cat ? 'on' : ''}" data-c="${c.id}">${c.nm}</button>`).join('')}</div>
     <label class="f">Jak často</label>
-    <div class="chips" id="fY">${[['daily','Každý den'],['weekly','1× týdně'],['once','Jen jednou']].map(([k, n]) =>
+    <div class="chips" id="fY">${[['daily','Každý den'],['weekly','Každý týden'],['once','Jen jednou']].map(([k, n]) =>
       `<button class="chip ${k === d.type ? 'on' : ''}" data-y="${k}">${n}</button>`).join('')}</div>
+    <p class="note" style="margin-top:9px">Opakující se úkol se objeví znovu každý den (nebo týden).
+      <b>Jen jednou</b> zmizí, jakmile ho splní.</p>
     <div id="fDaysWrap" ${d.type !== 'daily' ? 'hidden' : ''}>
       <label class="f">Ve které dny</label>
       <div class="days" id="fD">${DOW.map((n, i) => `<button class="${(d.days || []).includes(i + 1) ? 'on' : ''}" data-d="${i + 1}">${n}</button>`).join('')}</div>
