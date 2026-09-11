@@ -134,6 +134,16 @@ function progress() {
 }
 const weekWins = () => weekDays().filter(dayComplete).length;
 
+function dueLabel(due) {
+  const d = Math.round((new Date(due + 'T00:00:00') - new Date(TODAY() + 'T00:00:00')) / 86400000);
+  if (d < 0) return d === -1 ? 'Mělo být včera' : `Mělo být před ${-d} dny`;
+  if (d === 0) return 'Dnes';
+  if (d === 1) return 'Zítra';
+  if (d <= 6) return `Za ${d} ${d <= 4 ? 'dny' : 'dní'}`;
+  if (d === 7) return 'Za týden';
+  return 'Do ' + (+due.slice(8)) + '. ' + (+due.slice(5, 7)) + '.';
+}
+
 function recalcStreak() {
   let k = TODAY(), n = 0;
   if (!dayComplete(k)) k = dk(addD(new Date(), -1));
@@ -345,7 +355,7 @@ function schoolHTML() {
 function taskHTML(t, showWhen) {
   const done = isDone(t);
   const when = t.type === 'weekly' ? 'Tento týden'
-    : t.type === 'once' && t.due ? 'Do ' + (+t.due.slice(8)) + '. ' + (+t.due.slice(5, 7)) + '.' : '';
+    : t.type === 'once' && t.due ? dueLabel(t.due) : '';
   return `<div class="task ${done ? 'done' : ''}" data-task="${t.id}">
     <div class="emo ${catCls(t.cat)}">${t.emo}</div>
     <div class="tx"><div class="tt">${t.title}</div>
@@ -493,7 +503,12 @@ function homeworkSheet() {
     <label class="f">Kdy to musí být hotové</label>
     <div class="chips" id="hwWhen">
       <button class="chip" data-w="dnes">Dnes</button>
-      <button class="chip on" data-w="zitra">Zítra</button></div>
+      <button class="chip on" data-w="zitra">Zítra</button>
+      <button class="chip" data-w="tyden">Za týden</button>
+      <button class="chip" data-w="jine">Jiné datum</button></div>
+    <div id="hwDate" hidden><input type="date" id="hwD" value="${dk(addD(new Date(), 7))}"></div>
+    <p class="note" style="margin-top:10px">Úkol se objeví v dnešním dostihu v den termínu.
+      Do té doby čeká v sekci <b>Chystá se</b> s odpočtem.</p>
     ${near.length ? `<label class="f">Z dnešního a zítřejšího rozvrhu</label>${grid(near)}` : ''}
     ${rest.length ? `<label class="f">Ostatní</label>${grid(rest)}` : ''}
     <div style="height:14px"></div>`, box => {
@@ -501,13 +516,19 @@ function homeworkSheet() {
       const b = e.target.closest('[data-w]'); if (!b) return;
       when = b.dataset.w;
       box.querySelectorAll('#hwWhen .chip').forEach(x => x.classList.toggle('on', x === b));
+      box.querySelector('#hwDate').hidden = when !== 'jine';
     });
     box.addEventListener('click', e => {
       const b = e.target.closest('[data-hw]'); if (!b) return;
       const nm = b.dataset.hw, x = HW.find(y => y.nm === nm);
+      const due = when === 'dnes' ? TODAY()
+                : when === 'zitra' ? dk(addD(new Date(), 1))
+                : when === 'tyden' ? dk(addD(new Date(), 7))
+                : (box.querySelector('#hwD').value || dk(addD(new Date(), 7)));
       S.tasks.push({ id: uid(), title: 'Úkol – ' + nm, emo: x.ico, cat: 'skola', type: 'once',
-        due: when === 'dnes' ? TODAY() : dk(addD(new Date(), 1)), created: TODAY() });
-      save(); closeSheet(); raceP = progress().p; render(); toast(`Úkol z ${nm} přidán 📚`);
+        due, created: TODAY() });
+      save(); closeSheet(); raceP = progress().p; render();
+      toast(`Úkol z ${nm}: ${dueLabel(due).toLowerCase()} 📚`);
     });
   });
 }
