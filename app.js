@@ -107,7 +107,19 @@ function rollGoal() {
 }
 
 /* ---------- výpočty ---------- */
-const day = k => (S.hist[k] || (S.hist[k] = { done: {} }));
+function reqIds(k) {
+  const w = iso(new Date(k + 'T00:00:00'));
+  return S.tasks.filter(t => !t.arch && t.type === 'daily' && (t.days || []).includes(w)
+    && (!t.created || t.created <= k)).map(t => t.id);
+}
+/* Co se ten den očekávalo. U dneška se přepočítává, minulost se zamkne,
+   aby pozdější úprava seznamu úkolů nepřepsala statistiku zpětně. */
+const day = k => {
+  const h = S.hist[k] || (S.hist[k] = { done: {} });
+  if (k === TODAY() || !h.req) h.req = reqIds(k);
+  return h;
+};
+const expectedFor = k => { const h = S.hist[k]; return (h && h.req) ? h.req : reqIds(k); };
 function weekDays(d) { const m = monday(d || new Date()); return [0,1,2,3,4,5,6].map(i => dk(addD(m, i))); }
 function doneToday(t) { return !!day(TODAY()).done[t.id]; }
 function doneThisWeek(t) { return weekDays().some(k => S.hist[k] && S.hist[k].done[t.id]); }
@@ -122,17 +134,75 @@ function todaysTasks() {
 }
 function weeklyOpen() { return S.tasks.filter(t => !t.arch && t.type === 'weekly'); }
 function dayComplete(k) {
-  const w = iso(new Date(k + 'T00:00:00'));
-  const req = S.tasks.filter(t => !t.arch && t.type === 'daily' && (t.days || []).includes(w));
+  const req = expectedFor(k);
   if (!req.length) return false;
   const h = S.hist[k];
-  return !!h && req.every(t => h.done[t.id]);
+  return !!h && req.every(id => h.done[id]);
 }
 function progress() {
   const l = todaysTasks(), d = l.filter(isDone).length;
   return { done: d, total: l.length, p: l.length ? d / l.length : 0 };
 }
 const weekWins = () => weekDays().filter(dayComplete).length;
+
+const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen',
+                'Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+let period = 'week', pOff = 0;
+
+function periodRange() {
+  const now = new Date();
+  if (period === 'week') {
+    const m = addD(monday(now), pOff * 7);
+    const days = [0,1,2,3,4,5,6].map(i => dk(addD(m, i)));
+    const a = m, b = addD(m, 6);
+    return { days, label: `${a.getDate()}. ${a.getMonth() + 1}. – ${b.getDate()}. ${b.getMonth() + 1}.` };
+  }
+  const f = new Date(now.getFullYear(), now.getMonth() + pOff, 1);
+  const y = f.getFullYear(), mo = f.getMonth(), n = new Date(y, mo + 1, 0).getDate();
+  const days = [];
+  for (let i = 1; i <= n; i++) days.push(dk(new Date(y, mo, i)));
+  return { days, label: `${MONTHS[mo]} ${y}` };
+}
+
+function statsFor(days) {
+  const td = TODAY();
+  const past = days.filter(k => k <= td);
+  let done = 0, exp = 0, races = 0, active = 0;
+  const per = {};
+  past.forEach(k => {
+    const req = expectedFor(k);
+    if (!req.length) return;
+    active++; exp += req.length;
+    const h = S.hist[k];
+    let d = 0;
+    req.forEach(id => {
+      const ok = !!(h && h.done[id]);
+      if (ok) d++;
+      per[id] = per[id] || { exp: 0, done: 0 };
+      per[id].exp++; if (ok) per[id].done++;
+    });
+    done += d;
+    if (d === req.length) races++;
+  });
+  /* týdenní úkoly: za každý týden, který do období spadá */
+  const weeks = [...new Set(past.map(k => weekKey(new Date(k + 'T00:00:00'))))];
+  const wk = S.tasks.filter(t => !t.arch && t.type === 'weekly');
+  let wExp = 0, wDone = 0;
+  weeks.forEach(mk => {
+    const wd = [0,1,2,3,4,5,6].map(i => dk(addD(new Date(mk + 'T00:00:00'), i)));
+    wk.forEach(t => {
+      if (t.created && t.created > wd[6]) return;
+      wExp++;
+      if (wd.some(k => S.hist[k] && S.hist[k].done[t.id])) wDone++;
+    });
+  });
+  /* domácí úkoly podle termínu */
+  const hw = S.tasks.filter(t => !t.arch && t.type === 'once' && t.due &&
+    days.includes(t.due) && t.due <= td);
+  return { done, exp, miss: exp - done, pct: exp ? Math.round(done / exp * 100) : 0,
+           races, active, per, wExp, wDone,
+           hwExp: hw.length, hwDone: hw.filter(t => t.doneAt).length };
+}
 
 function dueLabel(due) {
   const d = Math.round((new Date(due + 'T00:00:00') - new Date(TODAY() + 'T00:00:00')) / 86400000);
@@ -379,21 +449,67 @@ function viewDnes() {
 }
 
 function viewTyden() {
-  const days = weekDays(), td = TODAY();
-  const strip = days.map((k, i) => {
-    const full = dayComplete(k), some = S.hist[k] && Object.keys(S.hist[k].done).length;
-    return `<div class="day ${k === td ? 'today' : ''} ${full ? 'full' : ''}">
-      <b>${DOW[i]}</b><span class="mark">${full ? '🏆' : some ? '🐴' : k > td ? '·' : '—'}</span></div>`;
-  }).join('');
-  const wk = weeklyOpen();
-  return `<div class="card streak-card">
+  const { days, label } = periodRange(), st = statsFor(days), td = TODAY();
+  const isWeek = period === 'week';
+  const taskName = id => (S.tasks.find(t => t.id === id) || {});
+
+  const strip = isWeek ? `<div class="week-strip">${days.map((k, i) => {
+      const req = expectedFor(k), h = S.hist[k];
+      const d = req.filter(id => h && h.done[id]).length;
+      const cls = k > td ? 'fut' : !req.length ? 'none' : d === req.length ? 'full' : d ? 'part' : 'zero';
+      return `<div class="day ${k === td ? 'today' : ''} ${cls}">
+        <b>${DOW[i]}</b><span class="mark">${k > td ? '·' : !req.length ? '–'
+          : d === req.length ? '🏆' : d ? d + '/' + req.length : '—'}</span></div>`;
+    }).join('')}</div>`
+    : `<div class="mgrid">${days.map(k => {
+      const req = expectedFor(k), h = S.hist[k];
+      const d = req.filter(id => h && h.done[id]).length;
+      const cls = k > td ? 'fut' : !req.length ? 'none' : d === req.length ? 'full' : d ? 'part' : 'zero';
+      return `<div class="mday ${k === td ? 'today' : ''} ${cls}">${+k.slice(8)}</div>`;
+    }).join('')}</div>`;
+
+  const rows = Object.keys(st.per).map(id => {
+    const t = taskName(id), p = st.per[id], pc = p.exp ? Math.round(p.done / p.exp * 100) : 0;
+    return { emo: t.emo || '•', title: t.title || 'Smazaný úkol', ...p, pc };
+  }).sort((a, b) => a.pc - b.pc);
+
+  return `<div class="seg" id="seg">
+      <button data-p="week" class="${isWeek ? 'on' : ''}">Týden</button>
+      <button data-p="month" class="${!isWeek ? 'on' : ''}">Měsíc</button></div>
+    <div class="pernav">
+      <button data-off="-1" aria-label="Předchozí">‹</button>
+      <b>${pOff === 0 ? (isWeek ? 'Tento týden' : 'Tento měsíc') : label}</b>
+      <button data-off="1" ${pOff >= 0 ? 'disabled' : ''} aria-label="Další">›</button></div>
+    ${pOff !== 0 ? '' : `<div class="card streak-card">
       <div class="streak-ico">🔥</div>
       <div><h2>${S.streak.n} ${plur(S.streak.n, 'den', 'dny', 'dní')} v řadě</h2>
-      <p>Nejdelší série ${S.streak.best} · dojetých dostihů celkem ${S.stats.races}</p></div></div>
-    <div class="section-title">Tento týden</div>
-    <div class="week-strip">${strip}</div>
-    <div class="section-title">Týdenní úkoly</div>
-    ${wk.length ? wk.map(t => taskHTML(t)).join('') : `<div class="empty">Žádné týdenní úkoly</div>`}`;
+      <p>Nejdelší série ${S.streak.best} · dostihů celkem ${S.stats.races}</p></div></div>`}
+
+    <div class="kpi">
+      <div class="k ok"><b>${st.done}</b><span>splněno</span></div>
+      <div class="k no"><b>${st.miss}</b><span>nesplněno</span></div>
+      <div class="k pc"><b>${st.pct} %</b><span>úspěšnost</span></div>
+    </div>
+
+    <div class="card">
+      <div class="srow"><span>🏆 Dojetých dostihů</span><b>${st.races} z ${st.active}
+        ${plur(st.active, 'dne', 'dnů', 'dnů')}</b></div>
+      ${st.wExp ? `<div class="srow"><span>🧹 Týdenní úkoly</span><b>${st.wDone} z ${st.wExp}</b></div>` : ''}
+      ${st.hwExp ? `<div class="srow"><span>📚 Domácí úkoly</span><b>${st.hwDone} z ${st.hwExp}</b></div>` : ''}
+    </div>
+
+    <div class="section-title">${isWeek ? 'Dny v týdnu' : 'Dny v měsíci'}</div>
+    ${strip}
+
+    <div class="section-title">Po jednotlivých úkolech</div>
+    ${rows.length ? `<div class="card">${rows.map(r => `
+      <div class="tstat">
+        <span class="t-emo">${r.emo}</span>
+        <div class="t-mid"><div class="t-nm">${r.title}</div>
+          <div class="t-bar"><i class="${r.pc >= 80 ? 'hi' : r.pc >= 50 ? 'mid' : 'lo'}"
+            style="width:${r.pc}%"></i></div></div>
+        <b class="t-num">${r.done}/${r.exp}</b></div>`).join('')}</div>`
+      : `<div class="empty">Za tohle období zatím nejsou data</div>`}`;
 }
 
 function viewUkoly() {
@@ -589,7 +705,11 @@ function parentsSheet() {
 /* ---------- události ---------- */
 document.addEventListener('click', e => {
   const tb = e.target.closest('#tabbar button');
-  if (tb) { tab = tb.dataset.tab; render(); window.scrollTo(0, 0); return; }
+  if (tb) { tab = tb.dataset.tab; pOff = 0; render(); window.scrollTo(0, 0); return; }
+  const sg = e.target.closest('#seg button');
+  if (sg) { period = sg.dataset.p; pOff = 0; render(); return; }
+  const pv = e.target.closest('[data-off]');
+  if (pv && !pv.disabled) { pOff = Math.min(0, pOff + (+pv.dataset.off)); render(); return; }
   const tk = e.target.closest('[data-task]');
   if (tk) { const t = S.tasks.find(x => x.id === tk.dataset.task); if (t) toggleTask(t); return; }
   const ed = e.target.closest('[data-edit]');

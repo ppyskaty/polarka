@@ -18,6 +18,7 @@ Nic jiného — žádná měna, žádný obchod, žádné úrovně, žádné odz
 |---|---|
 | 🏁 **Dnešní dostih** | Úkoly = dráha. Splněný úkol = posun a cvalová animace. Všechno hotovo = cíl a konfety. |
 | 🔥 **Série** | Počet dní v řadě, kdy dojela do cíle. |
+| 📊 **Přehled** | Záložka *Týden* přepíná mezi týdnem a měsícem a listuje do minulosti: splněno / nesplněno / úspěšnost, dojeté dostihy, kalendář dnů a rozpad po jednotlivých úkolech. |
 | 🎁 **Cíl týdne** | Kolik dnů v týdnu má dojet do cíle a co za to. Nastaví rodiče. |
 | 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy. Domácí úkol se přidá klepnutím na předmět. |
 | ✏️ **Vlastní úkoly** | Název, obrázek, kategorie a jak často. Bez bodování — úkol je úkol. |
