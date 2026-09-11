@@ -47,16 +47,16 @@
     pts.push(CREST[CREST.length - 1]);
     pts.forEach(([x, y], i) => {
       const t = i / (pts.length - 1);
-      const len = rough ? 12 + ((i * 5) % 13) : 15 + t * 11;
+      const len = rough ? 15 + ((i * 3) % 7) : 15 + t * 11;
       const dx = -4 - t * 4;
       const tone = i % 3 === 0 ? shade(c, -.32) : i % 3 === 1 ? c : shade(c, .15);
       out += `<path d="M${x} ${y + 1.5} C${x - 1} ${y + len * .4} ${x + dx * .6} ${y + len * .75}
-              ${x + dx} ${y + len}" stroke="${tone}" stroke-width="${rough ? 5 : 6}" fill="none"
+              ${x + dx} ${y + len}" stroke="${tone}" stroke-width="${rough ? 6 : 6}" fill="none"
               stroke-linecap="round"/>`;
     });
-    if (rough) out += `<path d="M234 29 C232 21 235 16 239 14" stroke="${shade(c, -.2)}"
-        stroke-width="3" fill="none" stroke-linecap="round"/>
-        <path d="M206 38 C204 31 207 26 212 24" stroke="${c}" stroke-width="2.6" fill="none"
+    if (rough) out += `<path d="M233 30 C231 24 233 20 237 18" stroke="${shade(c, -.2)}"
+        stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <path d="M205 39 C203 34 205 30 209 28" stroke="${c}" stroke-width="3" fill="none"
         stroke-linecap="round"/>`;
     return out;
   }
@@ -90,7 +90,7 @@
       ${long ? `<path d="M${x + .5} ${y + 4} v${h - 6}" stroke="#00000055" stroke-width="1.3"/>` : ''}</g>`;
   }
 
-  function foreleg(x, col, dk, cls, long) {
+  function foreleg(x, col, dk, cls, long, near) {
     const d = long ? 6 : 0;
     return `<g class="${cls}">
       <g fill="none" stroke="${col}" stroke-linecap="round">
@@ -105,10 +105,13 @@
       <g fill="none" stroke="${shade(col, .3)}" stroke-linecap="round" opacity=".3">
         <path d="M${x - 9} 104 L${x - 9} 140" stroke-width="4.5"/>
         <path d="M${x - 2} 150 L${x - 1} 172" stroke-width="2.4"/></g>
+      ${near ? `<ellipse cx="${x - 3}" cy="130" rx="3.2" ry="6" fill="${dk}" opacity=".45"/>
+        <path d="M${x + 7} 172 C${x + 11} 176 ${x + 12} 181 ${x + 10} 185"
+              stroke="${col}" stroke-width="3.4" fill="none" stroke-linecap="round" opacity=".85"/>` : ''}
       ${hoof(x + 5, 186 + d, long)}</g>`;
   }
 
-  function hindleg(x, col, dk, cls, long) {
+  function hindleg(x, col, dk, cls, long, near) {
     const d = long ? 6 : 0;
     return `<g class="${cls}">
       <g fill="none" stroke="${col}" stroke-linecap="round">
@@ -127,6 +130,8 @@
         <path d="M${x + 1} 90 L${x - 8} 112" stroke-width="7"/>
         <path d="M${x - 14} 126 L${x - 17} 142" stroke-width="4"/>
         <path d="M${x - 6} 152 L${x - 4} 172" stroke-width="2.2"/></g>
+      ${near ? `<path d="M${x + 3} 172 C${x + 7} 176 ${x + 8} 181 ${x + 6} 185"
+              stroke="${col}" stroke-width="3.2" fill="none" stroke-linecap="round" opacity=".85"/>` : ''}
       ${hoof(x + 1, 186 + d, long)}</g>`;
   }
 
@@ -195,15 +200,21 @@
     const eyeOpen = st >= 1;
 
     const legC = shade(coat.c, -.06), legD = coat.d, farC = shade(coat.d, .06);
+    const COOL = '#3A2C4A';
+    const WARM = '#FFF2D2';
+    const LINE = shade(coat.d, -.45);
 
     const BODY = `M82 52 C106 58 138 60 166 49 C184 51 204 70 210 96
       C214 110 208 121 198 127 C180 137 140 139 112 131 C98 127 88 120 84 108
       C74 105 60 100 56 86 C52 70 62 50 82 52 Z`;
     const NECK = `M163 51 C188 44 220 35 250 27 C258 31 263 38 264 47
       C243 55 225 66 214 83 C210 89 209 93 210 98 C196 83 177 63 163 51 Z`;
-    const HEAD = `M248 25 C258 21 269 27 275 38 C282 50 289 63 291 73
-      C293 80 289 86 282 86 C274 86 267 81 263 75 C257 67 251 58 247 52
-      C243 45 242 33 248 25 Z`;
+    const HEAD = `M248 25 C258 21 269 27 275 38 C282 50 289 62 292 71
+      C296 79 292 88 283 89 C273 90 265 84 260 77 C255 69 250 59 246 53
+      C239 46 238 32 248 25 Z`;
+
+    const fur = `<rect x="20" y="2" width="286" height="210" filter="url(#fur-${u})"
+      opacity=".13" style="mix-blend-mode:overlay"/>`;
 
     return `<svg viewBox="${box}" xmlns="http://www.w3.org/2000/svg" class="horse-svg" aria-label="kůň">
   <defs>
@@ -211,7 +222,7 @@
       <stop offset="0" stop-color="#C2415F"/><stop offset=".33" stop-color="#E0B04E"/>
       <stop offset=".66" stop-color="#5AA57C"/><stop offset="1" stop-color="#8E77C0"/></linearGradient>
     <linearGradient id="cg-${u}" gradientUnits="userSpaceOnUse" x1="150" y1="22" x2="172" y2="146">
-      <stop offset="0" stop-color="${shade(coat.l, .1)}"/><stop offset=".4" stop-color="${coat.c}"/>
+      <stop offset="0" stop-color="${shade(coat.l, .12)}"/><stop offset=".4" stop-color="${coat.c}"/>
       <stop offset="1" stop-color="${coat.d}"/></linearGradient>
     <filter id="b4-${u}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
     <filter id="b9-${u}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
@@ -219,112 +230,146 @@
     <filter id="fur-${u}" x="0%" y="0%" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="9"/>
       <feColorMatrix type="saturate" values="0"/></filter>
-    <clipPath id="sil-${u}"><path d="${BODY}"/><path d="${NECK}"/><path d="${HEAD}"/></clipPath>
+    <clipPath id="cb-${u}"><path d="${BODY}"/></clipPath>
+    <clipPath id="ch-${u}"><path d="${NECK}"/><path d="${HEAD}"/></clipPath>
   </defs>
 
-  ${head ? '' : `<ellipse cx="140" cy="200" rx="86" ry="7" fill="#2A1B0C" opacity=".3" filter="url(#b9-${u})"/>`}
+  ${head ? '' : `<ellipse cx="140" cy="200" rx="88" ry="7" fill="#2A1B0C" opacity=".3" filter="url(#b9-${u})"/>`}
 
-  <!-- odvrácené nohy -->
-  ${hindleg(98, farC, shade(farC, -.25), 'lg lg-b', longHoof)}
-  ${foreleg(184, farC, shade(farC, -.25), 'lg lg-b', longHoof)}
+  ${hindleg(103, farC, shade(farC, -.25), 'lg lg-b', longHoof, false)}
+  ${foreleg(179, farC, shade(farC, -.25), 'lg lg-b', longHoof, false)}
 
-  <!-- ocas -->
   <g>${tailStrands(mc, rough)}</g>
+  <g fill="none" stroke="${shade(mc, .3)}" stroke-width="2" opacity=".35" stroke-linecap="round">
+    <path d="M58 62 C46 78 38 104 38 132"/><path d="M64 60 C56 80 50 106 50 134"/></g>
 
-  <!-- silueta: trup + krk + hlava jako jeden celek -->
-  <g>
-    <path d="${BODY}" fill="url(#cg-${u})"/>
-    <path d="${NECK}" fill="url(#cg-${u})"/>
-    <path d="${HEAD}" fill="url(#cg-${u})"/>
-  </g>
-
-  <g clip-path="url(#sil-${u})">
-    <!-- měkké vlastní stíny -->
-    <g filter="url(#b9-${u})" fill="${coat.d}">
-      <path d="M60 108 C96 142 160 148 214 128 L220 160 L40 160 Z" opacity=".55"/>
-      <path d="M166 48 C190 58 206 78 214 100 C200 100 184 86 172 68 Z" opacity=".42"/>
-      <path d="M214 84 C224 70 240 56 258 48 L266 62 C244 70 228 84 218 100 Z" opacity=".34"/>
-      <ellipse cx="96" cy="126" rx="30" ry="12" opacity=".3"/>
-      <path d="M246 52 C254 62 262 72 270 78 L262 88 L240 66 Z" opacity=".3"/>
+  <!-- TRUP -->
+  <path d="${BODY}" fill="url(#cg-${u})"/>
+  <g clip-path="url(#cb-${u})">
+    <g fill="${COOL}" opacity=".26">
+      <path d="M54 90 C68 120 110 138 162 133 C186 130 202 122 212 110
+               L214 134 C180 146 118 146 78 130 C62 122 54 106 54 90 Z"/>
+      <path d="M166 51 C177 70 183 92 183 113 C174 97 165 74 159 55 Z"/>
     </g>
-    <!-- světla -->
-    <g filter="url(#b16-${u})" fill="#FFFFFF">
-      <ellipse cx="92" cy="72" rx="30" ry="22" opacity=".2"/>
-      <ellipse cx="140" cy="60" rx="42" ry="10" opacity=".22"/>
-      <ellipse cx="222" cy="42" rx="26" ry="9" transform="rotate(-20 222 42)" opacity=".18"/>
-      <ellipse cx="276" cy="52" rx="12" ry="16" transform="rotate(-24 276 52)" opacity=".16"/>
+    <g filter="url(#b9-${u})" fill="${COOL}" opacity=".3">
+      <path d="M58 96 C74 126 116 142 168 136 L172 160 L40 160 Z"/>
+      <ellipse cx="98" cy="128" rx="32" ry="13"/><ellipse cx="176" cy="94" rx="13" ry="30"/>
     </g>
-    <!-- obrysové světlo shora -->
-    <g filter="url(#b4-${u})">
-      <path d="M84 52 C112 59 144 59 168 49" stroke="${shade(coat.l, .35)}" stroke-width="4"
-            opacity=".5" fill="none"/>
-      <path d="M170 47 C198 40 226 32 252 26" stroke="${shade(coat.l, .35)}" stroke-width="3.4"
-            opacity=".45" fill="none"/>
-      <path d="M56 84 C52 68 64 52 82 52" stroke="${shade(coat.l, .3)}" stroke-width="3.5"
-            opacity=".35" fill="none"/>
+    <g filter="url(#b16-${u})" fill="${WARM}">
+      <ellipse cx="88" cy="68" rx="30" ry="21" opacity=".34"/>
+      <ellipse cx="136" cy="57" rx="44" ry="10" opacity=".36"/>
+      <ellipse cx="204" cy="104" rx="10" ry="18" opacity=".2"/>
     </g>
-    ${coat.dapple ? `<g fill="${coat.l}" opacity=".26" filter="url(#b4-${u})">${
+    <g filter="url(#b4-${u})" fill="none" stroke="${WARM}">
+      <path d="M84 52 C112 59 144 59 168 49" stroke-width="4.5" opacity=".6"/>
+      <path d="M56 84 C52 68 64 52 82 52" stroke-width="3.5" opacity=".4"/>
+    </g>
+    ${coat.dapple ? `<g fill="${coat.l}" opacity=".24" filter="url(#b4-${u})">${
       [[96,74],[118,66],[140,70],[160,80],[104,100],[128,96],[150,104],[84,96],[112,84],[142,88]]
         .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7"/>`).join('')}</g>` : ''}
     ${coat.pinto ? `<g fill="#F6EEE6" opacity=".95">
        <path d="M108 58 C132 52 158 58 170 74 C154 86 124 88 106 78 Z"/>
        <ellipse cx="84" cy="116" rx="24" ry="15"/></g>
-       <g filter="url(#b9-${u})" fill="#9C8B7C" opacity=".3">
+       <g filter="url(#b9-${u})" fill="${COOL}" opacity=".3">
        <path d="M110 74 C130 70 150 74 162 82 C146 88 122 88 108 80 Z"/></g>` : ''}
     ${gloss ? `<g filter="url(#b4-${u})" fill="#FFFFFF">
-       <ellipse cx="118" cy="60" rx="34" ry="4" opacity=".4"/>
-       <ellipse cx="88" cy="70" rx="11" ry="15" opacity=".25"/>
-       <ellipse cx="206" cy="40" rx="14" ry="4" transform="rotate(-22 206 40)" opacity=".3"/></g>` : ''}
-    ${st === 0 ? `<g stroke="${coat.d}" stroke-width="3" opacity=".28" fill="none" filter="url(#b4-${u})">
+       <ellipse cx="118" cy="60" rx="34" ry="4" opacity=".45"/>
+       <ellipse cx="88" cy="70" rx="11" ry="15" opacity=".28"/></g>` : ''}
+    ${st === 0 ? `<g stroke="${COOL}" stroke-width="3" opacity=".3" fill="none" filter="url(#b4-${u})">
        <path d="M150 78 C152 92 150 104 146 114"/><path d="M162 76 C164 90 162 102 158 112"/>
        <path d="M138 80 C140 94 138 106 134 116"/></g>` : ''}
     ${mud ? `<g fill="#3E2F19" opacity="${mud}" filter="url(#b4-${u})">
        <path d="M96 112 C110 104 128 108 136 118 C120 128 102 126 96 112 Z"/>
        <ellipse cx="152" cy="120" rx="15" ry="8"/><ellipse cx="74" cy="98" rx="12" ry="9"/>
-       <ellipse cx="184" cy="108" rx="10" ry="7"/><ellipse cx="114" cy="64" rx="13" ry="6"/>
-       <ellipse cx="232" cy="52" rx="8" ry="6"/></g>` : ''}
-    <!-- textura srsti -->
-    <rect x="20" y="2" width="286" height="210" filter="url(#fur-${u})" opacity=".13"
-          style="mix-blend-mode:overlay"/>
+       <ellipse cx="184" cy="108" rx="10" ry="7"/><ellipse cx="114" cy="64" rx="13" ry="6"/></g>` : ''}
+    ${fur}
+  </g>
+  <g fill="none" stroke="${LINE}" stroke-linecap="round">
+    <path d="M82 52 C106 58 138 60 166 49" stroke-width="1.8" opacity=".3"/>
+    <path d="M210 96 C214 110 208 121 198 127" stroke-width="2.4" opacity=".4"/>
+    <path d="M198 127 C180 137 140 139 112 131" stroke-width="3.6" opacity=".55"/>
+    <path d="M112 131 C98 127 88 120 84 108" stroke-width="2.8" opacity=".45"/>
+    <path d="M84 108 C74 105 60 100 56 86" stroke-width="2.2" opacity=".35"/>
   </g>
 
-  <!-- bližší nohy -->
-  ${hindleg(84, legC, legD, 'lg lg-a', longHoof)}
-  ${foreleg(197, legC, legD, 'lg lg-a', longHoof)}
+  ${hindleg(84, legC, legD, 'lg lg-a', longHoof, true)}
+  ${foreleg(202, legC, legD, 'lg lg-a', longHoof, true)}
 
   ${accBody(o.body)}
 
-  <!-- hlava, uši, hříva -->
+  <!-- KRK A HLAVA (vlastní vrstva, aby šla sklopit i silueta) -->
   <g transform="rotate(${droop} 172 54)">
     <path d="M239 30 C233 18 236 9 242 6 C247 11 248 22 245 32 Z" fill="${shade(coat.d, .08)}"/>
+    <path d="${NECK}" fill="url(#cg-${u})"/>
+    <path d="${HEAD}" fill="url(#cg-${u})"/>
+    <g clip-path="url(#ch-${u})">
+      <g fill="${COOL}" opacity=".26">
+        <path d="M214 84 C226 68 243 56 261 48 L265 57 C247 65 231 79 221 97 Z"/>
+        <path d="M246 51 C253 61 260 70 268 77 L261 88 L239 65 Z"/>
+        <path d="M163 51 C177 62 190 74 200 88 L192 94 C180 78 170 64 160 55 Z"/>
+      </g>
+      <g filter="url(#b9-${u})" fill="${COOL}" opacity=".28">
+        <ellipse cx="228" cy="70" rx="26" ry="12" transform="rotate(-24 228 70)"/>
+        <ellipse cx="268" cy="82" rx="16" ry="8"/></g>
+      <g filter="url(#b16-${u})" fill="${WARM}">
+        <ellipse cx="224" cy="40" rx="27" ry="9" transform="rotate(-20 224 40)" opacity=".38"/>
+        <ellipse cx="276" cy="48" rx="12" ry="17" transform="rotate(-24 276 48)" opacity=".38"/></g>
+      <g filter="url(#b4-${u})" fill="none" stroke="${WARM}">
+        <path d="M170 47 C198 40 226 32 252 26" stroke-width="3.6" opacity=".5"/>
+        <path d="M250 28 C262 34 268 44 272 54" stroke-width="3" opacity=".5"/></g>
+      ${gloss ? `<ellipse cx="206" cy="40" rx="14" ry="4" transform="rotate(-22 206 40)"
+         fill="#fff" opacity=".35" filter="url(#b4-${u})"/>` : ''}
+      ${mud ? `<ellipse cx="232" cy="52" rx="8" ry="6" fill="#3E2F19" opacity="${mud}"
+         filter="url(#b4-${u})"/>` : ''}
+      ${fur}
+    </g>
+    <g fill="none" stroke="${LINE}" stroke-linecap="round">
+      <path d="M264 47 C243 55 225 66 214 83 C210 89 209 93 210 98" stroke-width="2.6" opacity=".45"/>
+      <path d="M163 51 C177 63 196 83 210 98" stroke-width="1.6" opacity=".26"/>
+      <path d="M248 25 C258 21 269 27 275 38 C282 50 289 62 292 71" stroke-width="1.8" opacity=".3"/>
+      <path d="M292 71 C296 79 292 88 283 89 C273 90 265 84 260 77 C255 69 250 59 246 53"
+            stroke-width="2.6" opacity=".45"/>
+    </g>
+
     <g>${maneStrands(mc, rough)}</g>
+    <g fill="none" stroke="${shade(mc, .35)}" stroke-width="1.8" opacity=".45" stroke-linecap="round">
+      <path d="M244 30 C236 38 230 46 226 54"/><path d="M212 40 C204 48 198 56 195 64"/>
+      <path d="M180 50 C173 58 168 64 166 70"/></g>
+
     <path d="M250 25 C245 17 248 8 254 5 C260 10 261 21 258 30 Z" fill="${shade(coat.c, .06)}"/>
-    <path d="M252.5 9 C255 13 256 20 255 26" stroke="${coat.d}" stroke-width="2.6" fill="none" opacity=".55"/>
-    <path d="${HEAD}" fill="url(#cg-${u})" opacity="0"/>
+    <path d="M252.5 9 C255 13 256 20 255 26" stroke="${COOL}" stroke-width="2.6" fill="none" opacity=".5"/>
+    <path d="M250 25 C245 17 248 8 254 5" stroke="${WARM}" stroke-width="1.6" fill="none" opacity=".5"/>
+
     <path d="M253 24 C245 30 242 40 246 51" stroke="${mc}" stroke-width="6" fill="none"
           stroke-linecap="round" opacity=".95"/>
-    <path d="M276 62 C285 61 291 68 291 75 C292 81 288 86 282 86 C275 86 270 80 270 73
-             C270 67 272 63 276 62 Z" fill="${shade(coat.l, .12)}" opacity=".55"/>
-    <path d="M283 73 C288 72 290 76 288 79 C286 82 282 82 281 79 C280 76 281 74 283 73 Z" fill="#1C120A"/>
-    <path d="M272 84 C277 87 283 87 288 84" stroke="${coat.d}" stroke-width="1.8" fill="none"
+    <path d="M275 64 C285 62 292 69 293 77 C294 84 289 89 282 89 C274 89 269 83 269 75
+             C269 69 271 65 275 64 Z" fill="${shade(coat.l, .14)}" opacity=".34"/>
+    <path d="M284 74 C289 73 291 78 289 81 C287 84 283 84 282 81 C281 77 282 75 284 74 Z" fill="#1C120A"/>
+    <path d="M285.4 75.4 C287 75 288 76.4 287.4 77.6" stroke="#fff" stroke-width="1" fill="none" opacity=".35"/>
+    <path d="M270 85 C275 89 281 90 287 87" stroke="${COOL}" stroke-width="1.8" fill="none"
           opacity=".6" stroke-linecap="round"/>
-    <path d="M247 52 C253 62 259 70 266 76" stroke="${coat.d}" stroke-width="2" fill="none"
-          opacity=".28" stroke-linecap="round"/>
-    <path d="M252 36 C258 44 262 54 264 64" stroke="${shade(coat.l, .3)}" stroke-width="3.5"
-          fill="none" opacity=".25" stroke-linecap="round"/>
-    <path d="M270 46 C278 54 284 62 288 70" stroke="${shade(coat.l, .35)}" stroke-width="3"
+    <g stroke="${shade(coat.d, -.2)}" stroke-width=".8" opacity=".45" stroke-linecap="round" fill="none">
+      <path d="M281 91 C285 94 289 96 293 96"/><path d="M278 93 C281 97 285 100 289 101"/>
+      <path d="M274 93 C276 97 278 101 281 104"/></g>
+    <path d="M252 36 C258 44 262 54 264 64" stroke="${WARM}" stroke-width="3.5"
           fill="none" opacity=".3" stroke-linecap="round"/>
+    <path d="M270 46 C278 54 285 63 290 72" stroke="${WARM}" stroke-width="3"
+          fill="none" opacity=".35" stroke-linecap="round"/>
+    <path d="M246 53 C252 63 258 71 265 78" stroke="${COOL}" stroke-width="2" fill="none"
+          opacity=".3" stroke-linecap="round"/>
     ${eyeOpen
-      ? `<g><ellipse cx="262" cy="42.5" rx="7" ry="6" transform="rotate(18 262 42.5)" fill="${coat.d}" opacity=".45"/>
+      ? `<g><ellipse cx="262" cy="42.5" rx="7" ry="6" transform="rotate(18 262 42.5)" fill="${COOL}" opacity=".4"/>
          <ellipse cx="262" cy="42" rx="5.8" ry="4.8" transform="rotate(18 262 42)" fill="#100A06"/>
-         <ellipse cx="261" cy="43.5" rx="3" ry="2" transform="rotate(18 261 43.5)" fill="#3A2A1E" opacity=".7"/>
+         <ellipse cx="261" cy="43.5" rx="3" ry="2" transform="rotate(18 261 43.5)" fill="#4A3426" opacity=".7"/>
          <circle cx="263.8" cy="40.2" r="1.7" fill="#fff" opacity=".95"/>
-         <path d="M256 37.5 C259 34 265 34 268 37.5" stroke="${coat.d}" stroke-width="2"
+         <path d="M256 37.5 C259 34 265 34 268 37.5" stroke="${shade(coat.d, -.2)}" stroke-width="2"
                fill="none" stroke-linecap="round"/>
-         <path d="M256.5 36.5 C259 33.5 265 33.5 267.5 36.5" stroke="#100A06" stroke-width="1.1"
-               fill="none" opacity=".7"/></g>`
+         <g stroke="#100A06" stroke-width=".9" opacity=".75" stroke-linecap="round">
+           <path d="M257 36.6 L255 34.4"/><path d="M261 35.3 L260 32.8"/><path d="M265 35.6 L265 33"/></g></g>`
       : `<path d="M256.5 41 C260 45.5 265 45.5 268 41.5" stroke="#100A06" stroke-width="2.6"
-               fill="none" stroke-linecap="round"/>`}
+               fill="none" stroke-linecap="round"/>
+         <path d="M257 39.5 C260 43.5 265 43.5 268 40" stroke="${shade(coat.d, -.2)}" stroke-width="1.4"
+               fill="none" opacity=".6" stroke-linecap="round"/>`}
     ${accHead(o.head)}
     ${ready ? `<g transform="translate(253,54) rotate(24)">
        <path d="M-3 5 L-5 16 L0 12.5 L5 16 L3 5 Z" fill="#8C2740"/>
