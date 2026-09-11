@@ -6,9 +6,11 @@ html = open('index.html', encoding='utf-8').read()
 css  = open('styles.css', encoding='utf-8').read()
 app  = open('app.js', encoding='utf-8').read()
 
-assets = {k: 'data:image/png;base64,' + base64.b64encode(open(f'assets/{k}.png','rb').read()).decode()
-          for k in ('scene', 'horse')}
-app = app.replace("IMG[k].src = 'assets/' + k + '.png';", "IMG[k].src = ASSETS[k];")
+assets = {f'assets/{k}.png': 'data:image/png;base64,' +
+          base64.b64encode(open(f'assets/{k}.png', 'rb').read()).decode()
+          for k in ('horse-stand', 'horse-run')}
+for path, uri in assets.items():
+    app = app.replace(f"'{path}'", f'ASSETS["{path}"]')
 app = app.replace("if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});", "")
 app = "const ASSETS = " + repr(assets).replace("'", '"') + ";\n" + app
 

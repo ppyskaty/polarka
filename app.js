@@ -142,42 +142,78 @@ function recalcStreak() {
   S.streak.best = Math.max(S.streak.best || 0, n);
 }
 
-/* ---------- dostih (pixel) ---------- */
-const SCENE_W = 180, SCENE_H = 80, SPR_W = 64, SPR_H = 46;
-const IMG = { scene: new Image(), horse: new Image(), ready: 0 };
-['scene', 'horse'].forEach(k => {
-  IMG[k].onload = () => { if (++IMG.ready === 2) drawRace(false); };
-  IMG[k].src = 'assets/' + k + '.png';
-});
+/* ---------- dostih ---------- */
+const HORSE = { stand: 'assets/horse-stand.png', run: 'assets/horse-run.png' };
+Object.values(HORSE).forEach(src => { const i = new Image(); i.src = src; });
 
-let raceP = 0, raceRAF = 0;
-const horseX = p => Math.round(4 + p * 94);
+let raceP = 0, raceT = 0;
+const runnerLeft = p => (1 + 58 * p).toFixed(1);
 
-function drawRace(running, t) {
-  const cv = $('#race'); if (!cv || IMG.ready < 2) return;
-  const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, SCENE_W, SCENE_H);
-  ctx.drawImage(IMG.scene, 0, 0);
-  const f = running ? 1 + (Math.floor((t || performance.now()) / 110) % 4) : 0;
-  const bob = running ? (f === 2 || f === 4 ? -1 : 0) : 0;
-  ctx.drawImage(IMG.horse, f * SPR_W, 0, SPR_W, SPR_H,
-                horseX(raceP), SCENE_H - SPR_H - 6 + bob, SPR_W, SPR_H);
+function sceneSVG() {
+  return `<svg class="scene" viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#A8D4EC"/><stop offset=".62" stop-color="#D8ECF6"/>
+        <stop offset="1" stop-color="#EDF4EE"/></linearGradient>
+      <linearGradient id="grs" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9CC182"/><stop offset="1" stop-color="#7BA765"/></linearGradient>
+      <linearGradient id="drt" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9E7A55"/><stop offset=".14" stop-color="#C39A6D"/>
+        <stop offset="1" stop-color="#A9855E"/></linearGradient>
+      <filter id="hz" x="-10%" y="-40%" width="120%" height="200%">
+        <feGaussianBlur stdDeviation="3.5"/></filter>
+    </defs>
+    <rect width="400" height="250" fill="url(#sky)"/>
+    <circle cx="336" cy="44" r="26" fill="#FFF6DC" opacity=".85"/>
+    <g filter="url(#hz)" fill="#FFFFFF" opacity=".72">
+      <ellipse cx="74" cy="56" rx="34" ry="9"/><ellipse cx="218" cy="38" rx="27" ry="7"/>
+      <ellipse cx="150" cy="82" rx="20" ry="5"/></g>
+    <g filter="url(#hz)">
+      <path d="M0 148 C58 126 116 142 176 132 C244 121 306 138 400 126 L400 178 L0 178 Z" fill="#A9C6B4"/>
+      <path d="M0 158 C70 142 138 158 214 150 C292 142 344 156 400 148 L400 186 L0 186 Z" fill="#93B88E"/>
+    </g>
+    <rect y="170" width="400" height="28" fill="url(#grs)"/>
+    <g stroke="#FBF6EC" stroke-linecap="round" opacity=".96">
+      <path d="M0 168 H400" stroke-width="4"/><path d="M0 180 H400" stroke-width="4"/>
+      ${[18, 92, 166, 240, 314, 388].map(x => `<path d="M${x} 158 v30" stroke-width="5"/>`).join('')}</g>
+    <g stroke="#000" opacity=".1" stroke-linecap="round">
+      <path d="M0 171 H400" stroke-width="1.6"/><path d="M0 183 H400" stroke-width="1.6"/></g>
+    <rect y="192" width="400" height="58" fill="url(#drt)"/>
+    <path d="M0 192 H400" stroke="#7E5F3F" stroke-width="2.5" opacity=".35"/>
+    <g opacity=".18" stroke="#6E5235" stroke-linecap="round" stroke-width="2">
+      ${[6,54,102,150,198,246,294,342,380].map((x, i) =>
+        `<path d="M${x} ${206 + (i % 3) * 12} h${16 + (i % 4) * 7}"/>`).join('')}</g>
+    <g opacity=".13" fill="#5E4527">
+      ${[[28,222],[96,236],[164,214],[232,240],[300,220],[358,234],[64,244],[268,228]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2"/>`).join('')}</g>
+  </svg>`;
+}
+
+function finishSVG() {
+  return `<svg class="finish" viewBox="0 0 40 130" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+    <rect x="17" y="8" width="5" height="122" rx="2" fill="#F3EADA"/>
+    <rect x="17" y="8" width="2" height="122" fill="#CBBDA6"/>
+    <g>${[0,1,2,3].map(r => [0,1,2].map(c =>
+      `<rect x="${22 + c * 6}" y="${8 + r * 6}" width="6" height="6"
+             fill="${(r + c) % 2 ? '#FFFFFF' : '#2B2622'}"/>`).join('')).join('')}</g>
+  </svg>`;
 }
 
 function raceTo(target, finished) {
-  const cv = $('#race'); if (!cv) { raceP = target; return; }
-  if (target < raceP) { raceP = target; drawRace(false); return; }
-  const from = raceP, t0 = performance.now(), dur = 1150;
-  cancelAnimationFrame(raceRAF);
-  const step = now => {
-    const k = Math.min(1, (now - t0) / dur);
-    raceP = from + (target - from) * (1 - Math.pow(1 - k, 3));
-    drawRace(k < 1, now);
-    if (k < 1) raceRAF = requestAnimationFrame(step);
-    else { raceP = target; drawRace(false); if (finished) confetti(90); }
-  };
-  raceRAF = requestAnimationFrame(step);
+  const el = document.getElementById('runner');
+  if (!el) { raceP = target; return; }
+  if (target <= raceP) { raceP = target; el.style.left = runnerLeft(raceP) + '%'; return; }
+  clearTimeout(raceT);
+  el.src = HORSE.run;
+  el.classList.add('running');
+  requestAnimationFrame(() => { el.style.left = runnerLeft(target) + '%'; });
+  raceT = setTimeout(() => {
+    raceP = target;
+    el.classList.remove('running');
+    el.src = HORSE.stand;
+    if (finished) { el.classList.add('cheer'); confetti(90);
+      setTimeout(() => el.classList.remove('cheer'), 1400); }
+  }, 1250);
 }
 
 /* ---------- akce ---------- */
@@ -186,7 +222,7 @@ function toggleTask(t) {
   if (wasDone) {
     if (t.type === 'weekly') weekDays().forEach(d => { if (S.hist[d]) delete S.hist[d].done[t.id]; });
     else { delete h.done[t.id]; if (t.type === 'once') delete t.doneAt; }
-    recalcStreak(); save(); render(); raceP = progress().p; drawRace(false);
+    recalcStreak(); save(); render(); raceTo(progress().p);
     return;
   }
   h.done[t.id] = true;
@@ -271,7 +307,11 @@ $('#sheet').addEventListener('click', e => { if (e.target.hasAttribute('data-clo
 function heroHTML() {
   const pr = progress(), win = pr.total > 0 && pr.done === pr.total;
   return `<div class="hero">
-    <canvas id="race" width="${SCENE_W}" height="${SCENE_H}"></canvas>
+    <div class="track">
+      ${sceneSVG()}${finishSVG()}
+      <img id="runner" class="runner" src="${HORSE.stand}" alt="" draggable="false"
+           style="left:${runnerLeft(raceP)}%">
+    </div>
     <div class="hero-foot">
       <div class="race-lbl"><b>${win ? '🏆 V cíli!' : '🏁 Dnešní dostih'}</b>
         <span>${pr.done} ze ${pr.total}</span></div>
@@ -369,7 +409,6 @@ function render() {
   $('#statStreak').querySelector('b').textContent = S.streak.n;
   $('#screen').innerHTML = ({ dnes: viewDnes, tyden: viewTyden, ukoly: viewUkoly })[tab]();
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  if (tab === 'dnes') drawRace(false);
 }
 
 /* ---------- editor úkolu ---------- */

@@ -1,8 +1,8 @@
 /* Offline cache — appka funguje i bez internetu.
    Strategie: nejdřív síť (aby se aktualizace projevily), když není, tak cache. */
-const V = 'staj-v8';
+const V = 'staj-v9';
 const FILES = ['./', './index.html', './styles.css', './app.js',
-               './assets/scene.png', './assets/horse.png',
+               './assets/horse-stand.png', './assets/horse-run.png',
                './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
