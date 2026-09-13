@@ -58,7 +58,7 @@ const lastShape = {};
 
 function fresh() {
   return {
-    v: 4, kid: 'Tiffany',
+    v: 5, kid: 'Tiffany',
     tasks: [], hist: {}, wsky: {}, gone: {},
     goal: { days: 5, reward: '', week: weekKey(new Date()), claimed: false },
     stats: {}, sound: true
@@ -68,7 +68,7 @@ function fresh() {
 function load() {
   try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { S = null; }
   if (!S) { S = fresh(); return; }
-  if (S.v !== 4) {
+  if (S.v !== 4 && S.v !== 5) {
     const o = S; S = fresh();
     S.sound = o.sound !== false;
     S.goal.reward = (o.goal && o.goal.reward) || '';
@@ -80,10 +80,13 @@ function load() {
   if (!S.wsky) S.wsky = {};
   if (!S.gone) S.gone = {};
   delete S.lockAt;
-  /* dřívější verze si volbu souhvězdí ukládaly ke dni; obrazec se dnes
-     odvozuje z počtu hvězd, takže ty zápisy jen překážely */
-  Object.keys(S.hist).forEach(k => { if (S.hist[k]) delete S.hist[k].cst; });
-  S.wsky = {};
+  if (S.v !== 5) {
+    /* starší verze zapisovaly souhvězdí už po prvním splněném úkolu nebo podle
+       hodiny — takový zápis neodpovídá dnešnímu pravidlu, tak jde pryč */
+    Object.keys(S.hist).forEach(k => { if (S.hist[k]) delete S.hist[k].cst; });
+    S.wsky = {};
+    S.v = 5;
+  }
   rollGoal();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -144,10 +147,21 @@ function totals() {
   };
 }
 
-/* Souhvězdí se ukáže jen tehdy, když svítí všechny hvězdy — teprve tam je počet
-   jistý. Nic se neukládá: obrazec se pokaždé odvodí z aktuálního počtu, takže
-   jméno nemůže přestat platit. Přibude-li úkol, hvězdy se rozpojí a čekají zas. */
-const revealOf = (n, done) => (n > 0 && done === n ? n : 0);
+/* Souhvězdí se ukáže ve chvíli, kdy poprvé svítí všechny hvězdy — teprve tam je
+   počet jistý. Od té chvíle pro ten den platí a už se nemění: úkol přidaný
+   potom dostane hvězdu vedle obrazce, ne v něm, a popisek to přizná. */
+function dayReveal(n, done) {
+  const h = S.hist[TODAY()];
+  if (h && h.cst) return h.cst;
+  if (n > 0 && done === n) { day(TODAY()).cst = n; save(); return n; }
+  return 0;
+}
+function weekReveal(n, done) {
+  const k = weekKey(new Date());
+  if (S.wsky[k]) return S.wsky[k];
+  if (n > 0 && done === n) { S.wsky[k] = n; save(); return n; }
+  return 0;
+}
 
 /* ---------- akce ---------- */
 function toggle(t) {
@@ -255,7 +269,7 @@ function dueLabel(due) {
 function skyPane(kind, title, items, tt) {
   const n = kind === 'd' ? tt.dTotal : tt.wTotal;
   const done = kind === 'd' ? tt.dDone : tt.wDone;
-  const base = revealOf(n, done);
+  const base = kind === 'd' ? dayReveal(n, done) : weekReveal(n, done);
   const revealed = base > 0;
   const glide = revealed && lastShape[kind] !== base;
   lastShape[kind] = revealed ? base : 0;
@@ -267,7 +281,7 @@ function skyPane(kind, title, items, tt) {
       ${Sky.svg({ n, done, base, revealed, glide, h: kind === 'd' ? 196 : 168,
                   flash: fl, comets: com, uid: kind })}
       ${revealed ? `<span class="cname">${Sky.label(base, n)}</span>
-        <span class="cdone">✦ Celé</span>`
+        ${done === n ? `<span class="cdone">✦ Celé</span>` : ''}`
         : `<span class="cname dim">${n ? 'Hvězdy se spojí, až budou svítit všechny' : ''}</span>`}
     </div>
     <div class="list">${items.map(t => starRow(t, t.type === 'bonus' ? 'bonus' : kind)).join('')}</div>
