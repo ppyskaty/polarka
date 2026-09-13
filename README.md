@@ -1,8 +1,10 @@
-# Stáj Tiffany 🐴
+# Souhvězdí ✨
 
-Hravý osobní organizér a plánovač pro dítě na 1. stupni, které má rádo koně.
-Běží jako **webová appka (PWA)** přidaná na plochu iPhonu — vypadá a chová se
-jako normální aplikace, funguje offline a **všechna data zůstávají v telefonu**.
+Plánovač úkolů pro dítě na 1. stupni. **Každý splněný úkol rozsvítí na obloze jednu
+hvězdu.** Když se rozsvítí všechny, souhvězdí je celé.
+
+Běží jako **webová appka (PWA)** přidaná na plochu iPhonu — vypadá a chová se jako
+normální aplikace, funguje offline a **všechna data zůstávají v telefonu**.
 
 - Žádný server, žádná registrace, žádné náklady.
 - Žádné sledování, žádné reklamy, žádné nákupy.
@@ -10,67 +12,59 @@ jako normální aplikace, funguje offline a **všechna data zůstávají v telef
 
 ## Jak to funguje
 
-Jediná mechanika: **dnešní dostih**. Dnešní úkoly jsou dráha. Každý splněný
-úkol rozeběhne koně o kus blíž k cílové vlajce; poslední úkol znamená cíl.
-Nic jiného — žádná měna, žádný obchod, žádné úrovně, žádné odznaky.
-
 | Prvek | Popis |
 |---|---|
-| 🏁 **Dnešní dostih** | Úkoly = dráha. Splněný úkol = posun a cvalová animace. Všechno hotovo = cíl a konfety. |
-| 🔥 **Série** | Počet dní v řadě, kdy dojela do cíle. |
-| 📊 **Přehled** | Záložka *Týden* přepíná mezi týdnem a měsícem a listuje do minulosti: splněno / nesplněno / úspěšnost, dojeté dostihy, kalendář dnů a rozpad po jednotlivých úkolech. |
-| 🎁 **Cíl týdne** | Kolik dnů v týdnu má dojet do cíle a co za to. Nastaví rodiče. |
+| ✨ **Dnešní souhvězdí** | Hvězdy jsou dnešní úkoly — školní i domácí dohromady. |
+| 🌙 **Týdenní souhvězdí** | Úkoly na celý týden. Hvězda se rozsvítí, jakmile je úkol splněn. |
+| 🔢 **Počitadlo nahoře** | Kolik hvězd má z kolika, přes obě souhvězdí dohromady. |
+| ☄️ **Komety** | Bonusy za dobrovolnou práci. Přičtou se k jejímu úlovku, ale **nezvedají počet hvězd, které musí splnit** — jinak by čím víc udělá, tím hůř vypadala. Jde je splnit víckrát denně. |
+| 📊 **Přehled** | Den, týden, měsíc nebo od začátku: rozsvíceno, zhaslo, úspěšnost, celá souhvězdí, komety a rozpad po jednotlivých úkolech. |
 | 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy. Domácí úkol se přidá klepnutím na předmět. |
-| ✏️ **Vlastní úkoly** | Název, obrázek, kategorie a jak často. Bez bodování — úkol je úkol. |
+| ✏️ **Vlastní úkoly** | Název, obrázek, kategorie a jak často. Seznam začíná prázdný. |
 
-## Grafika
+### Souhvězdí se vybírá podle počtu úkolů
 
-Pixel art, kreslený po pixelech ve složce `pixel/`:
+Katalog skutečných souhvězdí je v [`sky.js`](sky.js), indexovaný počtem hvězd:
+tři úkoly dají Trojúhelník, pět Kasiopeju, sedm Velký vůz, osm Orion. Hvězdy sedí
+tam, kde na obloze opravdu jsou, a jméno je vypsané pod obrazcem.
 
-- `pixel/sprite.py` — kůň 64×46 px: tvar po řádcích, celové stínování podle
-  tvaru, obrys, prameny hřívy a ocasu, čtyři fáze cvalu.
-- `pixel/scene.py` — dráha 180×80 px: obloha s ditheringem na přechodech,
-  slunce, mraky, kopce s lesní siluetou, ohradník, tráva, hlína, cílová vlajka.
+**Tvar se zamkne**, jakmile se rozsvítí první hvězda. Úkol přidaný později obrazec
+nepřekreslí, jen přibude hvězda navíc — jinak by se souhvězdí měnilo pod rukama.
 
-Obojí generuje PNG do `assets/`. Po úpravě spusťte `python3 pixel/scene.py`
-(vyrobí scénu i spritesheet) a zvyšte `V` v `sw.js`.
+### Týdenní úkoly mají vlastní den obnovy
+
+Každý týdenní úkol si nese den, kdy se jeho týden obnovuje. English může běžet
+pátek→pátek, čeština pondělí→pondělí. Nastavuje se v editoru úkolu.
 
 ## Instalace na iPhone
 
 1. Otevřít adresu aplikace v **Safari** (musí to být Safari, ne Chrome).
-2. Tlačítko **Sdílet** (čtvereček se šipkou) → **Přidat na plochu**.
-3. Pojmenovat „Stáj" → **Přidat**.
+2. Tlačítko **Sdílet** → **Přidat na plochu**.
+3. Pojmenovat a potvrdit.
 
-Tím vznikne ikona na ploše. Aplikace se otevírá na celou obrazovku bez
-adresního řádku a funguje i bez internetu.
+Vznikne ikona na ploše. Aplikace se otevírá na celou obrazovku bez adresního řádku
+a funguje i bez internetu.
 
-> Důležité: pracujte s ikonou na ploše, ne se záložkou v Safari. Verze na ploše
-> má vlastní, trvalé úložiště.
+> Pracujte s ikonou na ploše, ne se záložkou v Safari. Verze na ploše má vlastní,
+> trvalé úložiště.
 
 ## Zálohování
 
-Data jsou jen v telefonu. V aplikaci: **Úkoly → Pro rodiče a nastavení → Záloha**.
-Zkopírujte text a uložte si ho (e-mail, poznámky). Obnova = vložit text zpět a dát
-*Obnovit ze zálohy*. Doporučeno jednou za čas, ať se při výměně telefonu nic neztratí.
+Data jsou jen v telefonu. V aplikaci: **Úkoly → Pro rodiče → Záloha**. Zkopírujte text
+a uložte si ho. Obnova = vložit text zpět a dát *Obnovit*.
 
-## Vývoj / úpravy
+## Vývoj
 
 ```bash
 python3 -m http.server 4331
 ```
 
-Pak otevřít `http://localhost:4331`.
-
-Struktura:
-
 - `index.html` — kostra aplikace
-- `styles.css` — vzhled
-- `app.js` — logika, data, obrazovky, dostih
-- `assets/` — vygenerované pixelové PNG (scéna a spritesheet koně)
-- `build-preview.py` — sloučí appku do jednoho HTML souboru na náhled
+- `styles.css` — noční téma
+- `sky.js` — katalog souhvězdí a vykreslení oblohy
+- `app.js` — logika, data, obrazovky
 - `sw.js` — service worker (offline režim)
-- `make_icons.py` — generátor ikon (podkova)
+- `assets/` — obrázky koně z dřívější verze, teď nepoužité
 
-Data v `localStorage` pod klíčem `tiffany.stable.v1`.
-
-Po změně souborů zvyšte `V` v `sw.js`, aby si telefon stáhl novou verzi.
+Po změně souborů zvyšte `?v=` u odkazů v `index.html` a `V` v `sw.js`, aby si
+telefon stáhl novou verzi.

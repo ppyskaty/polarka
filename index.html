@@ -3,33 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Stáj Tiffany</title>
-<meta name="theme-color" content="#FFF6EA">
+<title>Souhvězdí</title>
+<meta name="theme-color" content="#0E1230">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Stáj">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Souhvězdí">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 
 <div id="app">
   <header class="topbar">
-    <div class="brand"><b>Stáj</b><span id="horseName">Hvězdička</span></div>
-    <div class="stats">
-      <div class="stat" id="statStreak"><span>🔥</span><b>0</b><i>dní v řadě</i></div>
-      <button class="icon-btn" data-act="parents" aria-label="Pro rodiče a nastavení">⚙️</button>
-    </div>
+    <div class="brand">Souhvězdí</div>
+    <div class="tally" id="tally"></div>
   </header>
 
   <main id="screen"></main>
 
   <nav class="tabbar" id="tabbar">
-    <button data-tab="dnes" class="on"><span>🏁</span>Dnes</button>
-    <button data-tab="tyden"><span>🗓️</span>Týden</button>
+    <button data-tab="obloha" class="on"><span>✨</span>Obloha</button>
+    <button data-tab="prehled"><span>📊</span>Přehled</button>
     <button data-tab="ukoly"><span>✏️</span>Úkoly</button>
   </nav>
 </div>
@@ -43,8 +40,8 @@
 </div>
 
 <div id="toast" class="toast" hidden></div>
-<canvas id="confetti"></canvas>
 
-<script src="app.js"></script>
+<script src="sky.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

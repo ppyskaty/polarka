@@ -1,5 +1,5 @@
 .DS_Store
 ._*
 .claude/settings.local.json
-preview.local.html
+*.local.html
 pixel/*.png
