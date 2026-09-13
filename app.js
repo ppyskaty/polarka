@@ -79,7 +79,28 @@ function load() {
   }
   if (!S.wsky) S.wsky = {};
   if (!S.gone) S.gone = {};
+  delete S.lockAt;
+  cleanReveals();
   rollGoal();
+}
+
+/* Starší verze zamykaly obrazec na první splněný úkol nebo na čas. Podle
+   dnešního pravidla se souhvězdí ukáže až po rozsvícení všech hvězd, takže
+   zámky zapsané na nedokončené dny je potřeba zahodit. */
+function cleanReveals() {
+  Object.keys(S.hist).forEach(k => {
+    const h = S.hist[k];
+    if (!h || !h.cst) return;
+    const req = h.req || [];
+    if (!req.length || !req.every(id => h.done && h.done[id])) delete h.cst;
+  });
+  Object.keys(S.wsky).forEach(k => {
+    const wk = S.tasks.filter(t => !t.arch && t.type === 'weekly');
+    const ref = k;
+    const allDone = wk.length && wk.every(t => cycleDays(t, ref).some(d =>
+      S.hist[d] && S.hist[d].done[t.id]));
+    if (!allDone) delete S.wsky[k];
+  });
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function rollGoal() {

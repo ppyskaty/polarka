@@ -82,7 +82,9 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 
 /* hvězdy */
 .st>*{transform-box:fill-box;transform-origin:50% 50%}
-.st .core{fill:#6E79B8;opacity:.55}
+.st .core{fill:#8E99D8;opacity:.8}
+.st .slot{fill:none;stroke:#7A85C8;stroke-width:1;opacity:.3;stroke-dasharray:2.4 2.6}
+.st.on .slot{display:none}
 .st.on .core{fill:#FFFBEE;opacity:1}
 .st.on .halo{fill:var(--gold);opacity:.11}
 .st.on .glow{fill:var(--gold);opacity:.28}

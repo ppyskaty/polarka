@@ -92,7 +92,8 @@ function skySVG(o) {
         ${on ? `<circle class="ring" r="6"/>
           <circle class="halo" r="${ex ? 11 : 15}"/><circle class="glow" r="${ex ? 5 : 6.5}"/>
           <path class="spark" d="M0 -13 L1.5 -1.5 L13 0 L1.5 1.5 L0 13 L-1.5 1.5 L-13 0 L-1.5 -1.5 Z"/>
-          <circle class="core" r="${ex ? 2.6 : 3.2}"/>` : `<circle class="core" r="${ex ? 2 : 2.3}"/>`}
+          <circle class="core" r="${ex ? 2.6 : 3.2}"/>`
+          : `<circle class="slot" r="${ex ? 5 : 7}"/><circle class="core" r="${ex ? 2.2 : 3}"/>`}
       </g></g></g>`;
   }).join('');
 

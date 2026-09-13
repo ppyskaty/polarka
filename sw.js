@@ -1,6 +1,6 @@
 /* Offline cache — appka funguje i bez internetu.
    Strategie: nejdřív síť (aby se aktualizace projevily), když není, tak cache. */
-const V = 'polarka-v1';
+const V = 'polarka-v2';
 const FILES = ['./', './index.html', './styles.css', './app.js',
                './sky.js',
                './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
