@@ -54,7 +54,7 @@ const catCls = c => (CATS.find(x => x.id === c) || CATS[1]).cls;
 /* ---------- stav ---------- */
 const KEY = 'tiffany.stable.v1';
 let S = null, tab = 'obloha', flash = null, period = 'week', pOff = 0;
-const lastShape = {}, justRevealed = {};
+const lastShape = {};
 
 function fresh() {
   return {
@@ -80,27 +80,11 @@ function load() {
   if (!S.wsky) S.wsky = {};
   if (!S.gone) S.gone = {};
   delete S.lockAt;
-  cleanReveals();
+  /* dřívější verze si volbu souhvězdí ukládaly ke dni; obrazec se dnes
+     odvozuje z počtu hvězd, takže ty zápisy jen překážely */
+  Object.keys(S.hist).forEach(k => { if (S.hist[k]) delete S.hist[k].cst; });
+  S.wsky = {};
   rollGoal();
-}
-
-/* Starší verze zamykaly obrazec na první splněný úkol nebo na čas. Podle
-   dnešního pravidla se souhvězdí ukáže až po rozsvícení všech hvězd, takže
-   zámky zapsané na nedokončené dny je potřeba zahodit. */
-function cleanReveals() {
-  Object.keys(S.hist).forEach(k => {
-    const h = S.hist[k];
-    if (!h || !h.cst) return;
-    const req = h.req || [];
-    if (!req.length || !req.every(id => h.done && h.done[id])) delete h.cst;
-  });
-  Object.keys(S.wsky).forEach(k => {
-    const wk = S.tasks.filter(t => !t.arch && t.type === 'weekly');
-    const ref = k;
-    const allDone = wk.length && wk.every(t => cycleDays(t, ref).some(d =>
-      S.hist[d] && S.hist[d].done[t.id]));
-    if (!allDone) delete S.wsky[k];
-  });
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function rollGoal() {
@@ -160,21 +144,10 @@ function totals() {
   };
 }
 
-/* Dokud nesvítí všechny hvězdy, leží volně po obloze a nespojují se — nikdo tedy
-   nepočítá s konkrétním obrazcem, který by pak přidaný úkol překreslil. Souhvězdí
-   se ukáže ve chvíli, kdy je rozsvíceno všechno: teprve tam je počet jistý. */
-function dayReveal(n, done) {
-  const h = S.hist[TODAY()];
-  if (h && h.cst) return h.cst;
-  if (n > 0 && done === n) { day(TODAY()).cst = n; save(); justRevealed.d = 1; return n; }
-  return 0;
-}
-function weekReveal(n, done) {
-  const k = weekKey(new Date());
-  if (S.wsky[k]) return S.wsky[k];
-  if (n > 0 && done === n) { S.wsky[k] = n; save(); justRevealed.w = 1; return n; }
-  return 0;
-}
+/* Souhvězdí se ukáže jen tehdy, když svítí všechny hvězdy — teprve tam je počet
+   jistý. Nic se neukládá: obrazec se pokaždé odvodí z aktuálního počtu, takže
+   jméno nemůže přestat platit. Přibude-li úkol, hvězdy se rozpojí a čekají zas. */
+const revealOf = (n, done) => (n > 0 && done === n ? n : 0);
 
 /* ---------- akce ---------- */
 function toggle(t) {
@@ -282,9 +255,10 @@ function dueLabel(due) {
 function skyPane(kind, title, items, tt) {
   const n = kind === 'd' ? tt.dTotal : tt.wTotal;
   const done = kind === 'd' ? tt.dDone : tt.wDone;
-  const base = kind === 'd' ? dayReveal(n, done) : weekReveal(n, done);
+  const base = revealOf(n, done);
   const revealed = base > 0;
-  const glide = !!justRevealed[kind];
+  const glide = revealed && lastShape[kind] !== base;
+  lastShape[kind] = revealed ? base : 0;
   const fl = flash && flash.sky === kind ? flash.i : -1;
   const com = kind === 'd' ? tt.comets : 0;
   return `<section class="pane">
@@ -495,7 +469,6 @@ function render() {
         tt.comets ? `<u>+${tt.comets} ☄︎</u>` : ''}`
     : `<div class="tw"><b class="q">✦</b><span>hvězdiček</span></div>`;
   $('#screen').innerHTML = ({ obloha: viewObloha, prehled: viewPrehled, ukoly: viewUkoly })[tab]();
-  justRevealed.d = justRevealed.w = 0;
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   flash = null;
 }
