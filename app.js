@@ -267,7 +267,7 @@ function skyPane(kind, title, items, tt) {
     <div class="phead"><h3>${title}</h3><span>${done} z ${n}</span></div>
     <div class="sky ${full ? 'full' : ''}">
       ${Sky.svg({ n, done, base, h: kind === 'd' ? 196 : 168, flash: fl, comets: com, uid: kind })}
-      <span class="cname">${n ? Sky.nameFor(base) : ''}</span>
+      <span class="cname">${n ? Sky.label(base, n) : ''}</span>
       ${full ? `<span class="cdone">✦ Celé</span>` : ''}
     </div>
     <div class="list">${items.map(t => starRow(t, t.type === 'bonus' ? 'bonus' : kind)).join('')}</div>

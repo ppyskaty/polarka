@@ -65,9 +65,9 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 10px 26px -14px #000}
 .sky.full{box-shadow:inset 0 0 0 1px rgba(255,217,138,.34),0 0 30px -10px rgba(255,217,138,.35)}
 .sky-svg{display:block;width:100%;height:auto}
-.cname{position:absolute;left:14px;bottom:10px;font-size:11px;font-weight:800;letter-spacing:.12em;
-  text-transform:uppercase;color:#BFC8F2;opacity:.7}
-.cdone{position:absolute;right:14px;bottom:10px;font-size:11.5px;font-weight:800;color:var(--gold)}
+.cname{position:absolute;left:14px;top:11px;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:#BFC8F2;opacity:.72;max-width:64%}
+.cdone{position:absolute;right:14px;bottom:11px;font-size:11.5px;font-weight:800;color:var(--gold)}
 
 /* hvězdy */
 .st>*{transform-box:fill-box;transform-origin:50% 50%}
@@ -83,6 +83,7 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 @keyframes burst{0%{transform:scale(.3);opacity:.95}100%{transform:scale(5.2);opacity:0}}
 .st.pop .core,.st.pop .glow,.st.pop .halo,.st.pop .spark{animation:lit .85s cubic-bezier(.2,1.3,.4,1)}
 @keyframes lit{0%{opacity:0;transform:scale(.25)}40%{transform:scale(1.6)}100%{transform:scale(1)}}
+.st.ex.on .halo{opacity:.09} .st.ex.on .spark{opacity:.3}
 .cl{stroke:#AEB8F0;stroke-width:1;opacity:.1;stroke-linecap:round}
 .cl.on{stroke:#DCE3FF;stroke-width:1.6;opacity:.72}
 .cm .cspark{fill:#FFF3CF;opacity:.6}

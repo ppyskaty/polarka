@@ -48,33 +48,41 @@ function dust(seed, w, h, count) {
 function skySVG(o) {
   const n = Math.max(0, o.n | 0), done = Math.max(0, Math.min(n, o.done | 0));
   const h = o.h || 190, W = 320, u = o.uid || 's';
-  const base = pickFor(o.base || n || 2);
-  const P = [];
-  for (let i = 0; i < n; i++) {
-    P.push(base.p[i] || [.12 + (i - base.p.length) * .16, .90]);   /* přetečení navíc */
-  }
-  const PADX = 34, PADY = 30;
-  const xy = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * (h - PADY * 2)];
+  const shape = pickFor(o.base || n || 2);
+  const figN = Math.min(n, shape.p.length);      /* hvězdy, které tvoří obrazec */
+  const extra = n - figN;                        /* hvězdy navíc — mimo obrazec */
 
-  const lines = (base.l || []).filter(([a, b]) => a < n && b < n).map(([a, b]) => {
-    const [x1, y1] = xy(P[a]), [x2, y2] = xy(P[b]), on = a < done && b < done;
-    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-      class="cl ${on ? 'on' : ''}"/>`;
+  /* když jsou hvězdy navíc, obrazec ustoupí nahoru a dole vznikne pruh pro ně */
+  const PADX = 34, PADY = 28, EXTRA_H = extra > 0 ? 34 : 0;
+  const figH = h - PADY * 2 - EXTRA_H;
+  const xy = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * figH];
+
+  const P = [];
+  for (let i = 0; i < figN; i++) P.push(xy(shape.p[i]));
+  for (let i = 0; i < extra; i++) {
+    const span = Math.min(extra, 6), step = 30;
+    P.push([46 + ((i % span) * step), h - 17 - (i >= span ? 16 : 0)]);
+  }
+
+  const lines = (shape.l || []).filter(([a, b]) => a < figN && b < figN).map(([a, b]) => {
+    const on = a < done && b < done;
+    return `<line x1="${P[a][0].toFixed(1)}" y1="${P[a][1].toFixed(1)}"
+      x2="${P[b][0].toFixed(1)}" y2="${P[b][1].toFixed(1)}" class="cl ${on ? 'on' : ''}"/>`;
   }).join('');
 
-  const stars = P.map((p, i) => {
-    const [x, y] = xy(p), on = i < done, pop = o.flash === i;
-    return `<g class="st ${on ? 'on' : 'off'} ${pop ? 'pop' : ''}"
+  const stars = P.map(([x, y], i) => {
+    const on = i < done, pop = o.flash === i, ex = i >= figN;
+    return `<g class="st ${on ? 'on' : 'off'} ${pop ? 'pop' : ''} ${ex ? 'ex' : ''}"
       transform="translate(${x.toFixed(1)},${y.toFixed(1)})" style="--d:${(i % 5) * .7}s">
       ${on ? `<circle class="ring" r="6"/>
-        <circle class="halo" r="15"/><circle class="glow" r="6.5"/>
+        <circle class="halo" r="${ex ? 11 : 15}"/><circle class="glow" r="${ex ? 5 : 6.5}"/>
         <path class="spark" d="M0 -13 L1.5 -1.5 L13 0 L1.5 1.5 L0 13 L-1.5 1.5 L-13 0 L-1.5 -1.5 Z"/>
-        <circle class="core" r="3.2"/>` : `<circle class="core" r="2.3"/>`}
+        <circle class="core" r="${ex ? 2.6 : 3.2}"/>` : `<circle class="core" r="${ex ? 2 : 2.3}"/>`}
     </g>`;
   }).join('');
 
-  const comets = (o.comets || 0) > 0 ? Array.from({ length: Math.min(o.comets, 5) }, (_, i) => {
-    const x = W - 46 - i * 58, y = h - 26 - (i % 2) * 20;
+  const comets = (o.comets || 0) > 0 ? Array.from({ length: Math.min(o.comets, 4) }, (_, i) => {
+    const x = W - 40 - i * 52, y = 46 + (i % 2) * 26;
     return `<g class="cm" style="--d:${i * .5}s" transform="translate(${x},${y})">
       <path class="tail" d="M3 -2 L-34 15 L-30 20 L1 3 Z" fill="url(#ct-${u})"/>
       <circle class="chalo" r="11"/><circle class="chead" r="3.6"/>
@@ -100,10 +108,18 @@ function skySVG(o) {
     <rect width="${W}" height="${h}" fill="url(#sg-${u})"/>
     <ellipse cx="${W * .38}" cy="${h * .42}" rx="${W * .62}" ry="${h * .30}"
       transform="rotate(-19 ${W * .38} ${h * .42})" fill="url(#mw-${u})" filter="url(#bl-${u})"/>
-    ${dust(n * 977 + h, W, h, 54)}
+    ${dust((o.base || n) * 977 + h, W, h, 54)}
     ${lines}${stars}${comets}
   </svg>`;
 }
 
-global.Sky = { svg: skySVG, nameFor, CAT };
+/* Jméno platí pro obrazec. Hvězdy navíc do souhvězdí nepatří a je to přiznané. */
+function label(base, total) {
+  const shape = pickFor(base || total);
+  const extra = Math.max(0, (total || 0) - Math.min(total, shape.p.length));
+  if (!extra) return shape.n;
+  return `${shape.n} + ${extra} ${extra === 1 ? 'hvězda' : extra <= 4 ? 'hvězdy' : 'hvězd'} navíc`;
+}
+
+global.Sky = { svg: skySVG, nameFor, label, CAT };
 })(window);
