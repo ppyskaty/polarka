@@ -26,8 +26,15 @@ const CAT = {
         l:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[4,11]] }
 };
 
-const pickFor = n => CAT[Math.max(2, Math.min(12, n))] || CAT[12];
-const nameFor = n => pickFor(n).n;
+/* Volné rozestavení hvězd, dokud se souhvězdí neukáže. Hvězda číslo k sedí
+   vždy na stejném místě, takže přidání úkolu ostatními nehne. */
+const SCATTER = [[.14,.24],[.41,.15],[.67,.22],[.89,.33],[.09,.50],[.35,.44],[.60,.52],
+                 [.85,.58],[.21,.74],[.47,.80],[.73,.76],[.95,.18],[.06,.84],[.33,.64]];
+const scatterAt = i => SCATTER[i % SCATTER.length];
+
+const pickFor = n => CAT[n] || null;
+const isReal = n => !!CAT[n];
+const nameFor = n => (pickFor(n) || CAT[12]).n;
 
 /* drobné hvězdy v pozadí — vždy stejné, ať obloha „neposkakuje" */
 function dust(seed, w, h, count) {
@@ -48,37 +55,45 @@ function dust(seed, w, h, count) {
 function skySVG(o) {
   const n = Math.max(0, o.n | 0), done = Math.max(0, Math.min(n, o.done | 0));
   const h = o.h || 190, W = 320, u = o.uid || 's';
-  const shape = pickFor(o.base || n || 2);
-  const figN = Math.min(n, shape.p.length);      /* hvězdy, které tvoří obrazec */
-  const extra = n - figN;                        /* hvězdy navíc — mimo obrazec */
+  const revealed = !!o.revealed;
+  const shape = revealed ? (pickFor(o.base || n) || CAT[12]) : null;
+  const figN = revealed ? Math.min(n, shape.p.length) : 0;
+  const extra = revealed ? n - figN : 0;
 
-  /* když jsou hvězdy navíc, obrazec ustoupí nahoru a dole vznikne pruh pro ně */
   const PADX = 34, PADY = 28, EXTRA_H = extra > 0 ? 34 : 0;
   const figH = h - PADY * 2 - EXTRA_H;
-  const xy = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * figH];
+  const box = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * figH];
+  const loose = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * (h - PADY * 2)];
 
-  const P = [];
-  for (let i = 0; i < figN; i++) P.push(xy(shape.p[i]));
-  for (let i = 0; i < extra; i++) {
-    const span = Math.min(extra, 6), step = 30;
-    P.push([46 + ((i % span) * step), h - 17 - (i >= span ? 16 : 0)]);
+  const P = [], from = [];
+  for (let i = 0; i < n; i++) {
+    const sc = loose(scatterAt(i));
+    let pos;
+    if (!revealed) pos = sc;
+    else if (i < figN) pos = box(shape.p[i]);
+    else {
+      const k = i - figN, span = Math.min(extra, 6);
+      pos = [46 + ((k % span) * 30), h - 17 - (k >= span ? 16 : 0)];
+    }
+    P.push(pos);
+    from.push([sc[0] - pos[0], sc[1] - pos[1]]);
   }
 
-  const lines = (shape.l || []).filter(([a, b]) => a < figN && b < figN).map(([a, b]) => {
-    const on = a < done && b < done;
-    return `<line x1="${P[a][0].toFixed(1)}" y1="${P[a][1].toFixed(1)}"
-      x2="${P[b][0].toFixed(1)}" y2="${P[b][1].toFixed(1)}" class="cl ${on ? 'on' : ''}"/>`;
-  }).join('');
+  const lines = revealed ? (shape.l || []).filter(([a, b]) => a < figN && b < figN).map(([a, b]) =>
+    `<line x1="${P[a][0].toFixed(1)}" y1="${P[a][1].toFixed(1)}"
+      x2="${P[b][0].toFixed(1)}" y2="${P[b][1].toFixed(1)}" class="cl on"/>`).join('') : '';
 
   const stars = P.map(([x, y], i) => {
-    const on = i < done, pop = o.flash === i, ex = i >= figN;
-    return `<g class="st ${on ? 'on' : 'off'} ${pop ? 'pop' : ''} ${ex ? 'ex' : ''}"
-      transform="translate(${x.toFixed(1)},${y.toFixed(1)})" style="--d:${(i % 5) * .7}s">
-      ${on ? `<circle class="ring" r="6"/>
-        <circle class="halo" r="${ex ? 11 : 15}"/><circle class="glow" r="${ex ? 5 : 6.5}"/>
-        <path class="spark" d="M0 -13 L1.5 -1.5 L13 0 L1.5 1.5 L0 13 L-1.5 1.5 L-13 0 L-1.5 -1.5 Z"/>
-        <circle class="core" r="${ex ? 2.6 : 3.2}"/>` : `<circle class="core" r="${ex ? 2 : 2.3}"/>`}
-    </g>`;
+    const on = i < done, pop = o.flash === i, ex = revealed && i >= figN;
+    const mv = o.glide ? ` style="--dx:${from[i][0].toFixed(1)}px;--dy:${from[i][1].toFixed(1)}px"` : '';
+    return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})">
+      <g class="mv"${mv}><g class="st ${on ? 'on' : 'off'} ${pop ? 'pop' : ''} ${ex ? 'ex' : ''}"
+        style="--d:${(i % 5) * .7}s">
+        ${on ? `<circle class="ring" r="6"/>
+          <circle class="halo" r="${ex ? 11 : 15}"/><circle class="glow" r="${ex ? 5 : 6.5}"/>
+          <path class="spark" d="M0 -13 L1.5 -1.5 L13 0 L1.5 1.5 L0 13 L-1.5 1.5 L-13 0 L-1.5 -1.5 Z"/>
+          <circle class="core" r="${ex ? 2.6 : 3.2}"/>` : `<circle class="core" r="${ex ? 2 : 2.3}"/>`}
+      </g></g></g>`;
   }).join('');
 
   const comets = (o.comets || 0) > 0 ? Array.from({ length: Math.min(o.comets, 4) }, (_, i) => {
@@ -115,11 +130,12 @@ function skySVG(o) {
 
 /* Jméno platí pro obrazec. Hvězdy navíc do souhvězdí nepatří a je to přiznané. */
 function label(base, total) {
-  const shape = pickFor(base || total);
+  const shape = pickFor(base || total) || CAT[12];
+  const nm = isReal(base || total) ? shape.n : 'Vlastní souhvězdí';
   const extra = Math.max(0, (total || 0) - Math.min(total, shape.p.length));
-  if (!extra) return shape.n;
-  return `${shape.n} + ${extra} ${extra === 1 ? 'hvězda' : extra <= 4 ? 'hvězdy' : 'hvězd'} navíc`;
+  if (!extra) return nm;
+  return `${nm} + ${extra} ${extra === 1 ? 'hvězda' : extra <= 4 ? 'hvězdy' : 'hvězd'} navíc`;
 }
 
-global.Sky = { svg: skySVG, nameFor, label, CAT };
+global.Sky = { svg: skySVG, nameFor, label, isReal, CAT };
 })(window);

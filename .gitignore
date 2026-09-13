@@ -2,4 +2,5 @@
 ._*
 .claude/settings.local.json
 *.local.html
-pixel/*.png
+splash/gait.png
+splash/scene-big.png
