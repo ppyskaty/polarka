@@ -60,10 +60,18 @@ function skySVG(o) {
   const figN = revealed ? Math.min(n, shape.p.length) : 0;
   const extra = revealed ? n - figN : 0;
 
-  const PADX = 34, PADY = 28, EXTRA_H = extra > 0 ? 34 : 0;
-  const figH = h - PADY * 2 - EXTRA_H;
+  const PADX = 34, PADY = 28;
+  const figH = h - PADY * 2;
   const box = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * figH];
   const loose = p => [PADX + p[0] * (W - PADX * 2), PADY + p[1] * (h - PADY * 2)];
+
+  /* Hvězda navíc sedne na spojnici obrazce — tvar souhvězdí se tím nemění
+     a je poznat, že do něj původně nepatří (má chladnější barvu). */
+  const segs = revealed ? (shape.l || []).filter(([a, b]) => a < figN && b < figN) : [];
+  const TS = [.5, .34, .66, .22, .78, .42];
+  /* pořadí spojnic zlatým řezem, ať hvězdy navíc nesednou všechny na jednu */
+  const order = segs.map((_, i) => i)
+    .sort((a, b) => ((a * .6180339887) % 1) - ((b * .6180339887) % 1));
 
   const P = [], from = [];
   for (let i = 0; i < n; i++) {
@@ -71,10 +79,12 @@ function skySVG(o) {
     let pos;
     if (!revealed) pos = sc;
     else if (i < figN) pos = box(shape.p[i]);
-    else {
-      const k = i - figN, span = Math.min(extra, 6);
-      pos = [46 + ((k % span) * 30), h - 17 - (k >= span ? 16 : 0)];
-    }
+    else if (segs.length) {
+      const k = i - figN, seg = segs[order[k % segs.length]];
+      const t = TS[Math.floor(k / segs.length) % TS.length];
+      const A = box(shape.p[seg[0]]), B = box(shape.p[seg[1]]);
+      pos = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t];
+    } else pos = box([.5, .88]);
     P.push(pos);
     from.push([sc[0] - pos[0], sc[1] - pos[1]]);
   }
@@ -90,9 +100,9 @@ function skySVG(o) {
       <g class="mv"${mv}><g class="st ${on ? 'on' : 'off'} ${pop ? 'pop' : ''} ${ex ? 'ex' : ''}"
         style="--d:${(i % 5) * .7}s">
         ${on ? `<circle class="ring" r="6"/>
-          <circle class="halo" r="${ex ? 11 : 15}"/><circle class="glow" r="${ex ? 5 : 6.5}"/>
+          <circle class="halo" r="${ex ? 12 : 15}"/><circle class="glow" r="${ex ? 5.4 : 6.5}"/>
           <path class="spark" d="M0 -13 L1.5 -1.5 L13 0 L1.5 1.5 L0 13 L-1.5 1.5 L-13 0 L-1.5 -1.5 Z"/>
-          <circle class="core" r="${ex ? 2.6 : 3.2}"/>`
+          <circle class="core" r="${ex ? 2.8 : 3.2}"/>`
           : `<circle class="slot" r="${ex ? 5 : 7}"/><circle class="core" r="${ex ? 2.2 : 3}"/>`}
       </g></g></g>`;
   }).join('');
