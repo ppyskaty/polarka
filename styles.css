@@ -1,4 +1,4 @@
-/* Souhvězdí — noční téma. Obloha a rozhraní jsou jeden svět. */
+/* Polárka — noční téma. Obloha a rozhraní jsou jeden svět. */
 :root{
   --bg:#0A0D22; --bg2:#111634; --card:#161C3D; --card2:#1D2450;
   --ink:#ECEFFB; --muted:#98A0CC; --dim:#6A73A8;
@@ -30,7 +30,10 @@ h1,h2,h3,p,ol,ul{margin:0} ol,ul{padding:0;list-style:none}
   background:rgba(10,13,34,.78);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
   border-bottom:1px solid var(--line)}
 .brand{font-weight:800;font-size:16.5px;letter-spacing:.01em}
-.tally{display:flex;align-items:baseline;gap:8px}
+.tally{display:flex;align-items:center;gap:9px}
+.tw{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}
+.tw span{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);margin-top:2px}
 .tally b{font-weight:800;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;
   color:var(--gold)}
 .tally b i{font-style:normal;color:var(--muted);font-weight:700;font-size:14px}
@@ -64,6 +67,9 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 .sky{position:relative;border-radius:var(--r);overflow:hidden;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 10px 26px -14px #000}
 .sky.full{box-shadow:inset 0 0 0 1px rgba(255,217,138,.34),0 0 30px -10px rgba(255,217,138,.35)}
+.sky.reshuffle{animation:resh .65s cubic-bezier(.2,.8,.3,1)}
+@keyframes resh{0%{opacity:.2;transform:scale(.982)}100%{opacity:1;transform:scale(1)}}
+.settle{font-size:11.5px;line-height:1.45;color:var(--dim);margin:8px 6px 0}
 .sky-svg{display:block;width:100%;height:auto}
 .cname{position:absolute;left:14px;top:11px;font-size:10.5px;font-weight:800;letter-spacing:.12em;
   text-transform:uppercase;color:#BFC8F2;opacity:.72;max-width:64%}

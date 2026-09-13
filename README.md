@@ -1,6 +1,7 @@
-# Souhvězdí ✨
+# Polárka ✨
 
-Plánovač úkolů pro dítě na 1. stupni. **Každý splněný úkol rozsvítí na obloze jednu
+Plánovač úkolů pro dítě na 1. stupni. Jméno má po Severce — hvězdě, podle které
+se lidi odjakživa orientovali. **Každý splněný úkol rozsvítí na obloze jednu
 hvězdu.** Když se rozsvítí všechny, souhvězdí je celé.
 
 Běží jako **webová appka (PWA)** přidaná na plochu iPhonu — vypadá a chová se jako

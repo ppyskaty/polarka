@@ -54,6 +54,7 @@ const catCls = c => (CATS.find(x => x.id === c) || CATS[1]).cls;
 /* ---------- stav ---------- */
 const KEY = 'tiffany.stable.v1';
 let S = null, tab = 'obloha', flash = null, period = 'week', pOff = 0;
+const lastShape = {};
 
 function fresh() {
   return {
@@ -138,18 +139,24 @@ function totals() {
   };
 }
 
-/* tvar souhvězdí se zamkne, jakmile se rozsvítí první hvězda — pozdější
-   přidání úkolu obrazec nepřekreslí, jen připojí hvězdu navíc */
+/* Obrazec se přes den volně přeskládává podle počtu úkolů — domácí úkoly
+   přistávají odpoledne a zamknout tvar na první splněný úkol by bylo brzy
+   (zuby si vyčistí ráno). Ustálí se až ve zvolenou hodinu; co přibude potom,
+   je hvězda navíc. */
+const lockHour = () => (S.lockAt == null ? 18 : S.lockAt);
+const afterLock = () => new Date().getHours() >= lockHour();
+
 function dayBase(n) {
   const h = S.hist[TODAY()];
   if (h && h.cst) return h.cst;
-  if (n > 0 && h && Object.keys(h.done || {}).length) { day(TODAY()).cst = n; save(); return n; }
+  if (n > 0 && afterLock()) { day(TODAY()).cst = n; save(); return n; }
   return n;
 }
 function weekBase(n) {
-  const k = weekKey(new Date());
+  const k = weekKey(new Date()), td = TODAY();
   if (S.wsky[k]) return S.wsky[k];
-  if (n > 0 && weeklyAll().some(t => weeklyDone(t))) { S.wsky[k] = n; save(); return n; }
+  /* týdenní obrazec se ustálí v neděli večer */
+  if (n > 0 && iso(new Date()) === 7 && afterLock()) { S.wsky[k] = n; save(); return n; }
   return n;
 }
 
@@ -265,11 +272,14 @@ function skyPane(kind, title, items, tt) {
   const com = kind === 'd' ? tt.comets : 0;
   return `<section class="pane">
     <div class="phead"><h3>${title}</h3><span>${done} z ${n}</span></div>
-    <div class="sky ${full ? 'full' : ''}">
+    <div class="sky ${full ? 'full' : ''}" data-sky="${kind}" data-shape="${base}">
       ${Sky.svg({ n, done, base, h: kind === 'd' ? 196 : 168, flash: fl, comets: com, uid: kind })}
       <span class="cname">${n ? Sky.label(base, n) : ''}</span>
       ${full ? `<span class="cdone">✦ Celé</span>` : ''}
     </div>
+    ${kind === 'd' && n > 0 && !afterLock()
+      ? `<p class="settle">Obloha se ještě může přeskládat — do ${lockHour()}:00 přidávej,
+         co ti dnes přibylo. Potom se obrazec ustálí.</p>` : ''}
     <div class="list">${items.map(t => starRow(t, t.type === 'bonus' ? 'bonus' : kind)).join('')}</div>
   </section>`;
 }
@@ -465,9 +475,15 @@ function render() {
   const tt = totals();
   const got = tt.dDone + tt.wDone, all = tt.dTotal + tt.wTotal;
   $('#tally').innerHTML = all
-    ? `<b>${got}<i> z ${all}</i></b>${tt.comets ? `<u>+${tt.comets} ☄︎</u>` : ''}`
-    : `<b class="q">✦</b>`;
+    ? `<div class="tw"><b>${got}<i> z ${all}</i></b><span>hvězdiček</span></div>${
+        tt.comets ? `<u>+${tt.comets} ☄︎</u>` : ''}`
+    : `<div class="tw"><b class="q">✦</b><span>hvězdiček</span></div>`;
   $('#screen').innerHTML = ({ obloha: viewObloha, prehled: viewPrehled, ukoly: viewUkoly })[tab]();
+  document.querySelectorAll('[data-sky]').forEach(el => {
+    const k = el.dataset.sky, sh = el.dataset.shape;
+    if (lastShape[k] != null && lastShape[k] !== sh) el.classList.add('reshuffle');
+    lastShape[k] = sh;
+  });
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   flash = null;
 }
@@ -612,6 +628,11 @@ function parentsSheet() {
     <label class="f">Odměna za splněný cíl</label>
     <input type="text" id="pR" value="${(S.goal.reward || '').replace(/"/g, '&quot;')}"
       placeholder="Např. výlet do stáje">
+    <label class="f">Kdy se obloha ustálí</label>
+    <div class="chips" id="pL">${[16,17,18,19,20].map(n =>
+      `<button class="chip ${n === lockHour() ? 'on' : ''}" data-l="${n}">${n}:00</button>`).join('')}</div>
+    <p class="note">Do té doby se souhvězdí přeskládává podle počtu úkolů — aby se dalo počkat,
+      než se zadá všechno, co ten den přibylo. Co přibude potom, je hvězda navíc.</p>
     <label class="f">Zvuky</label>
     <div class="chips" id="pS">
       <button class="chip ${S.sound ? 'on' : ''}" data-s="1">Zapnuté</button>
@@ -630,6 +651,11 @@ function parentsSheet() {
       const b = e.target.closest('[data-d]'); if (!b) return;
       S.goal.days = +b.dataset.d;
       box.querySelectorAll('#pD .chip').forEach(x => x.classList.toggle('on', x === b));
+    });
+    box.querySelector('#pL').addEventListener('click', e => {
+      const b = e.target.closest('[data-l]'); if (!b) return;
+      S.lockAt = +b.dataset.l;
+      box.querySelectorAll('#pL .chip').forEach(x => x.classList.toggle('on', x === b));
     });
     box.querySelector('#pS').addEventListener('click', e => {
       const b = e.target.closest('[data-s]'); if (!b) return;

@@ -1,6 +1,6 @@
 {
-  "name": "Souhvězdí",
-  "short_name": "Souhvězdí",
+  "name": "Polárka",
+  "short_name": "Polárka",
   "description": "Každý splněný úkol rozsvítí hvězdu.",
   "start_url": "./index.html",
   "scope": "./",
