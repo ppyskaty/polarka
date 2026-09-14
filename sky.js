@@ -85,7 +85,11 @@ function skySVG(o) {
       const t = TS[Math.floor(k / segs.length) % TS.length];
       const A = box(shape.p[seg[0]]), B = box(shape.p[seg[1]]);
       pos = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t];
-    } else pos = box([.5, .88]);
+    } else {
+      /* obrazec bez spojnic (jedna hvězda) — rozestav je do oblouku kolem něj */
+      const k = i - figN, a = -Math.PI / 2 + (k + 1) * .9, R = .26 + (k % 2) * .08;
+      pos = box([.5 + Math.cos(a) * R, .46 + Math.sin(a) * R * 1.15]);
+    }
     P.push(pos);
     from.push([sc[0] - pos[0], sc[1] - pos[1]]);
   }
