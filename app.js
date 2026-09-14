@@ -121,18 +121,27 @@ const cycleDays = (t, ref) => {
 const weeklyDone = (t, ref) => cycleDays(t, ref).some(k => S.hist[k] && S.hist[k].done[t.id]);
 
 const live = () => S.tasks.filter(t => !t.arch);
+
+/* Úkol s termínem, který ještě neuplynul, je hvězda v týdenním souhvězdí: dá se
+   splnit kdykoli do termínu, ne jen v jeden konkrétní den. Termín dál než týden
+   čeká v sekci Chystá se. Po termínu nesplněný úkol spadne do dnešního souhvězdí. */
+const DUEWIN = 7;
+const datedSoon = t => t.type === 'once' && !!t.due
+  && t.due >= TODAY() && t.due <= dk(addD(new Date(), DUEWIN));
+
 const dailyToday = () => {
   const w = iso(new Date()), td = TODAY();
-  return live().filter(t =>
+  return live().filter(t => !datedSoon(t) && (
     (t.type === 'daily' && (t.days || []).includes(w)) ||
     (t.type === 'once' && !t.doneAt && (!t.due || t.due <= td)) ||
-    (t.type === 'once' && t.doneAt === td));
+    (t.type === 'once' && t.doneAt === td)));
 };
-const weeklyAll = () => live().filter(t => t.type === 'weekly');
+const weeklyAll = () => live().filter(t => t.type === 'weekly' || datedSoon(t));
 const bonusAll = () => live().filter(t => t.type === 'bonus');
 
 function isDone(t) {
   if (t.type === 'weekly') return weeklyDone(t);
+  if (t.type === 'once') return !!t.doneAt;
   return !!day(TODAY()).done[t.id];
 }
 const bonusCount = (id, k) => ((S.hist[k || TODAY()] || {}).bonus || {})[id] || 0;
@@ -142,7 +151,7 @@ function totals() {
   const d = dailyToday(), w = weeklyAll();
   return {
     dTotal: d.length, dDone: d.filter(isDone).length,
-    wTotal: w.length, wDone: w.filter(t => weeklyDone(t)).length,
+    wTotal: w.length, wDone: w.filter(isDone).length,
     comets: cometsToday()
   };
 }
@@ -152,13 +161,19 @@ function totals() {
    potom dostane hvězdu vedle obrazce, ne v něm, a popisek to přizná. */
 function dayReveal(n, done) {
   const h = S.hist[TODAY()];
-  if (h && h.cst) return h.cst;
+  if (h && h.cst) {
+    if (h.cst <= n) return h.cst;
+    delete h.cst; save();          /* hvězd ubylo — obrazec už by nesouhlasil */
+  }
   if (n > 0 && done === n) { day(TODAY()).cst = n; save(); return n; }
   return 0;
 }
 function weekReveal(n, done) {
   const k = weekKey(new Date());
-  if (S.wsky[k]) return S.wsky[k];
+  if (S.wsky[k]) {
+    if (S.wsky[k] <= n) return S.wsky[k];
+    delete S.wsky[k]; save();
+  }
   if (n > 0 && done === n) { S.wsky[k] = n; save(); return n; }
   return 0;
 }
@@ -168,18 +183,21 @@ function toggle(t) {
   const k = TODAY(), h = day(k);
   if (t.type === 'bonus') return;
   const was = isDone(t);
+  const wk = t.type === 'weekly' || datedSoon(t);
   if (was) {
     if (t.type === 'weekly') cycleDays(t).forEach(d => { if (S.hist[d]) delete S.hist[d].done[t.id]; });
-    else { delete h.done[t.id]; if (t.type === 'once') delete t.doneAt; }
+    else if (t.type === 'once') {
+      if (t.doneAt && S.hist[t.doneAt]) delete S.hist[t.doneAt].done[t.id];
+      delete h.done[t.id]; delete t.doneAt;
+    } else delete h.done[t.id];
     save(); render();
     return;
   }
   h.done[t.id] = true;
   if (t.type === 'once') t.doneAt = k;
   const tt = totals();
-  flash = { sky: t.type === 'weekly' ? 'w' : 'd',
-            i: (t.type === 'weekly' ? tt.wDone : tt.dDone) - 1 };
-  const full = t.type === 'weekly' ? tt.wDone === tt.wTotal : tt.dDone === tt.dTotal;
+  flash = { sky: wk ? 'w' : 'd', i: (wk ? tt.wDone : tt.dDone) - 1 };
+  const full = wk ? tt.wDone === tt.wTotal : tt.dDone === tt.dTotal;
   save(); render(); ding(full);
   toast(full ? `✦ Souhvězdí je celé!` : `Hvězda se rozsvítila`);
 }
@@ -320,7 +338,8 @@ function viewObloha() {
       <p>Zatím tu žádné úkoly nejsou. Domluv se s rodiči, co budeš plnit, a přidej si je sem.</p>
       <button class="btn" data-act="new">➕ Přidat první úkol</button></div>` + schoolCard();
 
-  const soon = live().filter(t => t.type === 'once' && !t.doneAt && t.due && t.due > TODAY())
+  const soon = live().filter(t => t.type === 'once' && !t.doneAt && t.due
+                     && t.due > TODAY() && !datedSoon(t))
                      .sort((a, b) => a.due < b.due ? -1 : 1);
   const bon = bonusAll();
   return skyPane('d', 'Dnešní souhvězdí', dailyToday().concat(bon), tt) +
@@ -469,7 +488,8 @@ function viewUkoly() {
     ${grp('Každý den', a.filter(t => t.type === 'daily'))}
     ${grp('Každý týden', a.filter(t => t.type === 'weekly'), 'Šipka ukazuje den, kdy se úkol obnoví.')}
     ${grp('Bonusy — komety', a.filter(t => t.type === 'bonus'), 'Dobrovolné. Nikdy nechybí, jen přidávají.')}
-    ${grp('Jen jednou', a.filter(t => t.type === 'once'))}
+    ${grp('Jen jednou', a.filter(t => t.type === 'once'),
+      'Úkol s termínem do týdne svítí v týdenním souhvězdí, vzdálenější čeká v sekci Chystá se.')}
     <div class="section-title">Další</div>
     <button class="btn sec" data-act="rozvrh">🗓️ Rozvrh hodin</button>
     <button class="btn sec" data-act="parents">⚙️ Pro rodiče a nastavení</button>`;
@@ -595,8 +615,8 @@ function homeworkSheet() {
       <button class="chip" data-w="tyden">Za týden</button>
       <button class="chip" data-w="jine">Jiné datum</button></div>
     <div id="hwDate" hidden><input type="date" id="hwD" value="${dk(addD(new Date(), 7))}"></div>
-    <p class="note">Hvězda se rozsvítí v dnešním souhvězdí v den termínu. Do té doby úkol čeká
-      v sekci <b>Chystá se</b>.</p>
+    <p class="note">Úkol s termínem do týdne je hvězda v <b>týdenním souhvězdí</b> — splnit ho jde
+      kdykoli do termínu. Vzdálenější termín čeká v sekci <b>Chystá se</b>.</p>
     ${near.length ? `<label class="f">Z dnešního a zítřejšího rozvrhu</label>${grid(near)}` : ''}
     ${rest.length ? `<label class="f">Ostatní</label>${grid(rest)}` : ''}
     <div style="height:12px"></div>`, box => {
