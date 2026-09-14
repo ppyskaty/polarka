@@ -16,6 +16,6 @@ app = "const ASSETS = " + repr(assets).replace("'", '"') + ";\n" + app
 
 body = html.split('<body>', 1)[1].split('</body>', 1)[0]
 body = re.sub(r'<script src="[^"]+"></script>', '', body).strip()
-out.write_text('<title>Stáj Tiffany</title>\n<style>\n' + css + '\n</style>\n\n' + body +
+out.write_text('<title>Polárka</title>\n<style>\n' + css + '\n</style>\n\n' + body +
                '\n\n<script>\n' + app + '\n</script>\n', encoding='utf-8')
 print(out, out.stat().st_size, 'B')

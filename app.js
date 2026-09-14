@@ -52,13 +52,13 @@ const catNm = c => (CATS.find(x => x.id === c) || CATS[1]).nm;
 const catCls = c => (CATS.find(x => x.id === c) || CATS[1]).cls;
 
 /* ---------- stav ---------- */
-const KEY = 'tiffany.stable.v1';
+const KEY = 'polarka.v1';
 let S = null, tab = 'obloha', flash = null, period = 'week', pOff = 0;
 const lastShape = {};
 
 function fresh() {
   return {
-    v: 5, kid: 'Tiffany',
+    v: 5,
     tasks: [], hist: {}, wsky: {}, gone: {},
     goal: { days: 5, reward: '', week: weekKey(new Date()), claimed: false },
     stats: {}, sound: true
