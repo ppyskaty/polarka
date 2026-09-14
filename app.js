@@ -276,13 +276,14 @@ function skyPane(kind, title, items, tt) {
   const fl = flash && flash.sky === kind ? flash.i : -1;
   const com = kind === 'd' ? tt.comets : 0;
   return `<section class="pane">
-    <div class="phead"><h3>${title}</h3><span>${done} z ${n}</span></div>
+    <div class="phead"><h3>${title}</h3><span>${n ? done + ' z ' + n : 'volno'}</span></div>
     <div class="sky ${revealed ? 'full' : ''} ${glide ? 'revealing' : ''}" data-sky="${kind}">
       ${Sky.svg({ n, done, base, revealed, glide, h: kind === 'd' ? 196 : 168,
                   flash: fl, comets: com, uid: kind })}
       ${revealed ? `<span class="cname">${Sky.label(base, n)}</span>
         ${done === n ? `<span class="cdone">✦ Celé</span>` : ''}`
-        : `<span class="cname dim">${n ? 'Hvězdy se spojí, až budou svítit všechny' : ''}</span>`}
+        : n ? `<span class="cname dim">Hvězdy se spojí, až budou svítit všechny</span>`
+        : `<span class="restday">Dnes tě žádný úkol nečeká ✨</span>`}
     </div>
     <div class="list">${items.map(t => starRow(t, t.type === 'bonus' ? 'bonus' : kind)).join('')}</div>
   </section>`;

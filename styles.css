@@ -75,6 +75,8 @@ main{flex:1;padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 
 @keyframes linein{from{opacity:0}to{opacity:.72}}
 .sky.revealing .cname,.sky.revealing .cdone{animation:linein .6s 1.05s backwards}
 .cname.dim{opacity:.42;font-weight:700;letter-spacing:.06em;text-transform:none;font-size:10.5px}
+.restday{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;font-weight:700;
+  color:#AEB9EA;opacity:.75;text-align:center;padding:0 24px}
 .sky-svg{display:block;width:100%;height:auto}
 .cname{position:absolute;left:14px;top:11px;font-size:10.5px;font-weight:800;letter-spacing:.12em;
   text-transform:uppercase;color:#BFC8F2;opacity:.72;max-width:64%}
