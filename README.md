@@ -65,6 +65,7 @@ python3 -m http.server 4331
 - `sky.js` — katalog souhvězdí a vykreslení oblohy
 - `app.js` — logika, data, obrazovky
 - `sw.js` — service worker (offline režim)
+- `make_icons.py` — generátor ikony (noční obloha se souhvězdím)
 - `splash/` — odložená koňská verze (obrázky a generátory), nepoužívá se
 
 Po změně souborů zvyšte `?v=` u odkazů v `index.html` a `V` v `sw.js`, aby si
