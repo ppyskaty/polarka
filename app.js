@@ -42,7 +42,7 @@ const HW = [
   { nm:'Výtvarka', ico:'🎨' }, { nm:'Workshop', ico:'🛠️' }
 ];
 
-const EMOJIS = ['🎒','📚','✏️','📒','🔢','🇬🇧','🧹','🧺','👕','🛏️','🍽️','🗑️','🪥','🚿','🌙','⏰',
+const EMOJIS = ['🎒','📚','✏️','📒','🔢','🇬🇧','🌍','📐','🛠️','🧹','🧺','👕','🛏️','🍽️','🗑️','🪥','🚿','🌙','⏰',
                 '🐴','🎹','⚽','🎨','💖','📖','🐕','💧','🌱','🧸','🎵','🏃'];
 const CATS = [
   { id:'skola', nm:'Škola',   cls:'c-skola' }, { id:'domov', nm:'Domov',  cls:'c-domov' },
@@ -58,7 +58,7 @@ const lastShape = {};
 
 function fresh() {
   return {
-    v: 5,
+    v: 6,
     tasks: [], hist: {}, wsky: {}, gone: {},
     goal: { days: 5, reward: '', week: weekKey(new Date()), claimed: false },
     stats: {}, sound: true
@@ -68,7 +68,7 @@ function fresh() {
 function load() {
   try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { S = null; }
   if (!S) { S = fresh(); return; }
-  if (S.v !== 4 && S.v !== 5) {
+  if ([4, 5, 6].indexOf(S.v) < 0) {
     const o = S; S = fresh();
     S.sound = o.sound !== false;
     S.goal.reward = (o.goal && o.goal.reward) || '';
@@ -86,6 +86,15 @@ function load() {
     Object.keys(S.hist).forEach(k => { if (S.hist[k]) delete S.hist[k].cst; });
     S.wsky = {};
     S.v = 5;
+  }
+  if (S.v !== 6) {
+    /* Termín teď nese i to, kde hvězda svítí. Co bylo zadané „za týden“ (tedy
+       s odstupem dvou a více dnů), patří do týdenního souhvězdí, zbytek do dne. */
+    S.tasks.forEach(t => {
+      if (t.type !== 'once') return;
+      t.span = (t.due && t.due > dk(addD(new Date(), 1))) ? 'week' : 'day';
+    });
+    S.v = 6;
   }
   rollGoal();
 }
@@ -122,12 +131,11 @@ const weeklyDone = (t, ref) => cycleDays(t, ref).some(k => S.hist[k] && S.hist[k
 
 const live = () => S.tasks.filter(t => !t.arch);
 
-/* Úkol s termínem, který ještě neuplynul, je hvězda v týdenním souhvězdí: dá se
-   splnit kdykoli do termínu, ne jen v jeden konkrétní den. Termín dál než týden
-   čeká v sekci Chystá se. Po termínu nesplněný úkol spadne do dnešního souhvězdí. */
-const DUEWIN = 7;
-const datedSoon = t => t.type === 'once' && !!t.due
-  && t.due >= TODAY() && t.due <= dk(addD(new Date(), DUEWIN));
+/* Jednorázový úkol si nese, kde má svítit. „Tento týden“ (span 'week') je hvězda
+   v týdenním souhvězdí od zadání až do termínu — splnit ho jde kdykoli do té doby.
+   Konkrétní den (span 'day') čeká v sekci Chystá se a rozsvítí se v dnešním
+   souhvězdí v den termínu. Po termínu nesplněný úkol spadne do dnešního souhvězdí. */
+const datedSoon = t => t.type === 'once' && t.span === 'week' && !!t.due && t.due >= TODAY();
 
 const dailyToday = () => {
   const w = iso(new Date()), td = TODAY();
@@ -489,7 +497,7 @@ function viewUkoly() {
     ${grp('Každý týden', a.filter(t => t.type === 'weekly'), 'Šipka ukazuje den, kdy se úkol obnoví.')}
     ${grp('Bonusy — komety', a.filter(t => t.type === 'bonus'), 'Dobrovolné. Nikdy nechybí, jen přidávají.')}
     ${grp('Jen jednou', a.filter(t => t.type === 'once'),
-      'Úkol s termínem do týdne svítí v týdenním souhvězdí, vzdálenější čeká v sekci Chystá se.')}
+      'Úkol na tento týden svítí v týdenním souhvězdí, úkol na konkrétní den v dnešním.')}
     <div class="section-title">Další</div>
     <button class="btn sec" data-act="rozvrh">🗓️ Rozvrh hodin</button>
     <button class="btn sec" data-act="parents">⚙️ Pro rodiče a nastavení</button>`;
@@ -509,27 +517,55 @@ function render() {
 }
 
 /* ---------- editor úkolu ---------- */
-function editSheet(t) {
+/* Jeden editor na všechno. Odkud se otevře, to jen předvyplní pole — domácí úkol
+   ze školní karty přijde jako školní jednorázovka a dál se nabízí totéž co jinde. */
+const WHENS = [['dnes', 'Dnes'], ['zitra', 'Zítra'], ['tyden', 'Tento týden'], ['jine', 'Jiné datum']];
+const whenDue = w => w === 'dnes' ? TODAY()
+  : w === 'zitra' ? dk(addD(new Date(), 1)) : dk(addD(new Date(), 7));
+function whenOf(t) {
+  if (t.type !== 'once' || !t.due) return 'dnes';
+  if (t.span === 'week') return 'tyden';
+  if (t.due === TODAY()) return 'dnes';
+  if (t.due === dk(addD(new Date(), 1))) return 'zitra';
+  return 'jine';
+}
+function whenHint(w, due) {
+  if (w === 'dnes') return 'Hvězda svítí hned v dnešním souhvězdí.';
+  if (w === 'zitra') return 'Dnes úkol počká v sekci Chystá se, zítra se rozsvítí v dnešním souhvězdí.';
+  if (w === 'tyden') return 'Hvězda svítí v týdenním souhvězdí — splnit ho jde kdykoli do ' +
+    dnyDo(whenDue('tyden'));
+  return due ? 'Hvězda se rozsvítí v dnešním souhvězdí ' + dueLabel(due) + '.'
+             : 'Vyber datum. Hvězda se rozsvítí v dnešním souhvězdí ten den.';
+}
+const dnyDo = due => { const d = D_(due); return d.getDate() + '. ' + (d.getMonth() + 1) + '.'; };
+
+function editSheet(t, pre) {
   const nw = !t;
-  t = t || { id: uid(), title: '', emo: '⭐', cat: 'domov', type: 'daily',
-             days: [1,2,3,4,5,6,7], wstart: 1, created: TODAY() };
+  t = t || Object.assign({ id: uid(), title: '', emo: '⭐', cat: 'domov', type: 'daily',
+    days: [1,2,3,4,5,6,7], wstart: 1, created: TODAY() }, pre || {});
   const d = JSON.parse(JSON.stringify(t));
+  const q = v => String(v || '').replace(/"/g, '&quot;');
+  let when = whenOf(d);
   const show = () => {
+    $('#wSubj').hidden = d.cat !== 'skola';
     $('#wDays').hidden = d.type !== 'daily';
     $('#wStart').hidden = d.type !== 'weekly';
-    $('#wDue').hidden = d.type !== 'once';
+    $('#wWhen').hidden = d.type !== 'once';
+    $('#wDate').hidden = !(d.type === 'once' && when === 'jine');
     $('#wBon').hidden = d.type !== 'bonus';
+    $('#wHint').textContent = whenHint(when, $('#fDue').value);
   };
   openSheet(nw ? 'Nový úkol' : 'Upravit úkol', `
     <label class="f">Co mám udělat?</label>
-    <input type="text" id="fT" value="${d.title.replace(/"/g, '&quot;')}"
+    <input type="text" id="fT" value="${q(d.title)}"
       placeholder="Např. Uklidit si stůl" autocomplete="off">
-    <label class="f">Obrázek</label>
-    <div class="emo-grid" id="fE">${EMOJIS.map(e =>
-      `<button class="emo-pick ${e === d.emo ? 'on' : ''}" data-e="${e}">${e}</button>`).join('')}</div>
     <label class="f">Kam patří</label>
     <div class="chips" id="fC">${CATS.map(c =>
       `<button class="chip ${c.id === d.cat ? 'on' : ''}" data-c="${c.id}">${c.nm}</button>`).join('')}</div>
+    <div id="wSubj"><label class="f">Který předmět</label>
+      <div class="pick-grid" id="fS">${HW.map(x =>
+        `<button class="pick ${x.nm === d.subj ? 'on' : ''}" data-s="${q(x.nm)}"><span class="p-ico">${x.ico}</span><span class="p-nm">${x.nm}</span></button>`).join('')}</div>
+      <p class="note">Předmět doplní obrázek a název. Název si pak můžeš přepsat.</p></div>
     <label class="f">Jak často</label>
     <div class="chips" id="fY">${[['daily','Každý den'],['weekly','Každý týden'],
       ['once','Jen jednou'],['bonus','Bonus']].map(([k, n]) =>
@@ -542,35 +578,52 @@ function editSheet(t) {
         `<button class="${wstart(d) === i + 1 ? 'on' : ''}" data-w="${i + 1}">${n}</button>`).join('')}</div>
       <p class="note">Úkol se obnoví vždy v <b id="wsName">${DOWL[wstart(d) - 1]}</b>
         a do dalšího musí být hotový.</p></div>
-    <div id="wDue"><label class="f">Do kdy (nepovinné)</label>
-      <input type="date" id="fDue" value="${d.due || ''}"></div>
+    <div id="wWhen"><label class="f">Kdy to má být hotové</label>
+      <div class="chips" id="fWh">${WHENS.map(([k, n]) =>
+        `<button class="chip ${k === when ? 'on' : ''}" data-h="${k}">${n}</button>`).join('')}</div>
+      <div id="wDate"><input type="date" id="fDue" value="${q(d.due || whenDue('tyden'))}"></div>
+      <p class="note" id="wHint"></p></div>
     <div id="wBon"><p class="note">Bonus je dobrovolný. Splnit ho jde i víckrát za den a pokaždé
       přidá jednu kometu. Nikdy nechybí — nezvedá počet hvězd, které musíš splnit.</p></div>
+    <label class="f">Obrázek</label>
+    <div class="emo-grid" id="fE">${EMOJIS.map(e =>
+      `<button class="emo-pick ${e === d.emo ? 'on' : ''}" data-e="${e}">${e}</button>`).join('')}</div>
     <div style="height:16px"></div>
     <button class="btn" id="fSave">Uložit</button>
     ${nw ? '' : `<button class="btn ghost" id="fDel">Smazat úkol</button>`}`, box => {
     const pick = (sel, attr, fn) => box.querySelector(sel).addEventListener('click', e => {
       const b = e.target.closest('[data-' + attr + ']'); if (!b) return; fn(b.dataset[attr], b);
     });
-    pick('#fE', 'e', v => { d.emo = v;
-      box.querySelectorAll('#fE .emo-pick').forEach(x => x.classList.toggle('on', x.dataset.e === v)); });
-    pick('#fC', 'c', v => { d.cat = v;
-      box.querySelectorAll('#fC .chip').forEach(x => x.classList.toggle('on', x.dataset.c === v)); });
-    pick('#fY', 'y', v => { d.type = v;
-      box.querySelectorAll('#fY .chip').forEach(x => x.classList.toggle('on', x.dataset.y === v)); show(); });
+    const only = (sel, b) => box.querySelectorAll(sel).forEach(x => x.classList.toggle('on', x === b));
+    pick('#fE', 'e', (v, b) => { d.emo = v; only('#fE .emo-pick', b); });
+    pick('#fC', 'c', (v, b) => { d.cat = v; only('#fC .chip', b); show(); });
+    pick('#fY', 'y', (v, b) => { d.type = v; only('#fY .chip', b); show(); });
+    pick('#fWh', 'h', (v, b) => { when = v; only('#fWh .chip', b); show(); });
+    pick('#fS', 's', (v, b) => {
+      const x = HW.find(y => y.nm === v); if (!x) return;
+      d.subj = v; d.emo = x.ico; only('#fS .pick', b);
+      only('#fE .emo-pick', [...box.querySelectorAll('#fE .emo-pick')].find(e => e.dataset.e === x.ico));
+      const ti = box.querySelector('#fT');
+      if (!ti.value.trim() || /^Úkol – /.test(ti.value)) ti.value = 'Úkol – ' + v;
+    });
     pick('#fD', 'd', (v, b) => {
       const n = +v; d.days = d.days || [];
       d.days = d.days.includes(n) ? d.days.filter(x => x !== n) : d.days.concat(n);
       b.classList.toggle('on', d.days.includes(n));
     });
-    pick('#fW', 'w', (v, b) => { d.wstart = +v;
-      box.querySelectorAll('#fW button').forEach(x => x.classList.toggle('on', x === b));
+    pick('#fW', 'w', (v, b) => { d.wstart = +v; only('#fW button', b);
       box.querySelector('#wsName').textContent = DOWL[d.wstart - 1]; });
+    box.querySelector('#fDue').addEventListener('change', show);
     show();
     box.querySelector('#fSave').addEventListener('click', () => {
       d.title = box.querySelector('#fT').value.trim();
       if (!d.title) { toast('Napiš, co máš udělat 🙂'); return; }
-      if (d.type === 'once') d.due = box.querySelector('#fDue').value || '';
+      if (d.cat !== 'skola') delete d.subj;
+      if (d.type === 'once') {
+        d.span = when === 'tyden' ? 'week' : 'day';
+        d.due = when === 'jine' ? (box.querySelector('#fDue').value || whenDue('tyden'))
+                                : whenDue(when);
+      } else { delete d.due; delete d.span; delete d.doneAt; }
       if (d.type === 'daily' && !(d.days || []).length) d.days = [1,2,3,4,5,6,7];
       const i = S.tasks.findIndex(x => x.id === d.id);
       if (i >= 0) S.tasks[i] = d; else S.tasks.push(d);
@@ -598,46 +651,6 @@ function rozvrhSheet() {
     </div>`).join('')}</div><p class="note">Rozvrh je pevný na celý rok.</p>`);
 }
 
-function homeworkSheet() {
-  const d = iso(new Date());
-  const tl = (SCHEDULE[d] || []).join(' '), ml = (SCHEDULE[d >= 5 ? 1 : d + 1] || []).join(' ');
-  const near = HW.filter(x => tl.indexOf(x.nm) >= 0 || ml.indexOf(x.nm) >= 0);
-  const rest = HW.filter(x => near.indexOf(x) < 0);
-  let when = 'zitra';
-  const grid = arr => `<div class="pick-grid">${arr.map(x =>
-    `<button class="pick" data-hw="${x.nm}"><span class="p-ico">${x.ico}</span>
-      <span class="p-nm">${x.nm}</span></button>`).join('')}</div>`;
-  openSheet('Domácí úkol', `
-    <label class="f">Kdy to musí být hotové</label>
-    <div class="chips" id="hwWhen">
-      <button class="chip" data-w="dnes">Dnes</button>
-      <button class="chip on" data-w="zitra">Zítra</button>
-      <button class="chip" data-w="tyden">Za týden</button>
-      <button class="chip" data-w="jine">Jiné datum</button></div>
-    <div id="hwDate" hidden><input type="date" id="hwD" value="${dk(addD(new Date(), 7))}"></div>
-    <p class="note">Úkol s termínem do týdne je hvězda v <b>týdenním souhvězdí</b> — splnit ho jde
-      kdykoli do termínu. Vzdálenější termín čeká v sekci <b>Chystá se</b>.</p>
-    ${near.length ? `<label class="f">Z dnešního a zítřejšího rozvrhu</label>${grid(near)}` : ''}
-    ${rest.length ? `<label class="f">Ostatní</label>${grid(rest)}` : ''}
-    <div style="height:12px"></div>`, box => {
-    box.querySelector('#hwWhen').addEventListener('click', e => {
-      const b = e.target.closest('[data-w]'); if (!b) return;
-      when = b.dataset.w;
-      box.querySelectorAll('#hwWhen .chip').forEach(x => x.classList.toggle('on', x === b));
-      box.querySelector('#hwDate').hidden = when !== 'jine';
-    });
-    box.addEventListener('click', e => {
-      const b = e.target.closest('[data-hw]'); if (!b) return;
-      const nm = b.dataset.hw, x = HW.find(y => y.nm === nm);
-      const due = when === 'dnes' ? TODAY() : when === 'zitra' ? dk(addD(new Date(), 1))
-        : when === 'tyden' ? dk(addD(new Date(), 7))
-        : (box.querySelector('#hwD').value || dk(addD(new Date(), 7)));
-      S.tasks.push({ id: uid(), title: 'Úkol – ' + nm, emo: x.ico, cat: 'skola', type: 'once',
-        due, created: TODAY() });
-      save(); closeSheet(); render(); toast(`Úkol z ${nm}: ${dueLabel(due)} 📚`);
-    });
-  });
-}
 
 function parentsSheet() {
   openSheet('Pro rodiče', `
@@ -714,7 +727,7 @@ document.addEventListener('click', e => {
     else if (a === 'parents') parentsSheet();
     else if (a === 'claim') claimGoal();
     else if (a === 'rozvrh') rozvrhSheet();
-    else if (a === 'hw') homeworkSheet();
+    else if (a === 'hw') editSheet(null, { cat: 'skola', type: 'once' });
   }
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { load(); render(); } });

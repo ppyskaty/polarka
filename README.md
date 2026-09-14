@@ -16,12 +16,12 @@ normální aplikace, funguje offline a **všechna data zůstávají v telefonu**
 | Prvek | Popis |
 |---|---|
 | ✨ **Dnešní souhvězdí** | Hvězdy jsou dnešní úkoly — školní i domácí dohromady. |
-| 🌙 **Týdenní souhvězdí** | Úkoly na celý týden. Hvězda se rozsvítí, jakmile je úkol splněn. |
+| 🌙 **Týdenní souhvězdí** | Úkoly na celý týden — opakující se i jednorázové s termínem „tento týden". Hvězda se rozsvítí, jakmile je úkol splněn. |
 | 🔢 **Počitadlo nahoře** | Kolik hvězd má z kolika, přes obě souhvězdí dohromady. |
 | ☄️ **Komety** | Bonusy za dobrovolnou práci. Přičtou se k jejímu úlovku, ale **nezvedají počet hvězd, které musí splnit** — jinak by čím víc udělá, tím hůř vypadala. Jde je splnit víckrát denně. |
 | 📊 **Přehled** | Den, týden, měsíc nebo od začátku: rozsvíceno, zhaslo, úspěšnost, celá souhvězdí, komety a rozpad po jednotlivých úkolech. |
-| 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy. Domácí úkol se přidá klepnutím na předmět. |
-| ✏️ **Vlastní úkoly** | Název, obrázek, kategorie a jak často. Seznam začíná prázdný. |
+| 🗓️ **Rozvrh** | Pevný rozvrh 3. třídy. |
+| ✏️ **Úkoly** | Jeden editor na všechno: název, kam patří (u školy i předmět), jak často a u jednorázových kdy to má být hotové — dnes, zítra, tento týden nebo k datu. Seznam začíná prázdný. |
 
 ### Souhvězdí se vybírá podle počtu úkolů
 
